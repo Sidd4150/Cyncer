@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  externalId    String
+  platform      Platform
+  status        OrderStatus
+  customerName  String
+  customerEmail String?
+  total         Float
+  currency      String      @default("USD")
+  items         OrderItem[]
+  createdAt     DateTime
+  updatedAt     DateTime    @updatedAt
+  syncedAt      DateTime    @default(now())
+
+  @@unique([platform, externalId])
+}
+
+model OrderItem {
+  id       String @id @default(cuid())
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  name     String
+  quantity Int
+  price    Float
+}
+
+enum Platform {
+  ETSY
+  FAIRE
+  EBAY
+  AMAZON
+  MICHAELS
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
