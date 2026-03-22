@@ -7,7 +7,6 @@ const PLATFORM_COLORS: Record<Platform, string> = {
   FAIRE: "bg-purple-100 text-purple-700",
   EBAY: "bg-blue-100 text-blue-700",
   AMAZON: "bg-yellow-100 text-yellow-700",
-  MICHAELS: "bg-green-100 text-green-700",
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {

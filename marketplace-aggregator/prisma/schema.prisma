@@ -33,12 +33,26 @@ model OrderItem {
   price    Float
 }
 
+model PlatformConnection {
+  id           String   @id @default(cuid())
+  userId       String
+  platform     Platform
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  shopId       String?
+  shopName     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, platform])
+}
+
 enum Platform {
   ETSY
   FAIRE
   EBAY
   AMAZON
-  MICHAELS
 }
 
 enum OrderStatus {

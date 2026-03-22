@@ -92,29 +92,6 @@ const SAMPLE_ORDERS = [
     createdAt: new Date("2026-03-20"),
     items: [{ name: "Pressed flower bookmark set", quantity: 1, price: 15.49 }],
   },
-  {
-    externalId: "MCH-88231",
-    platform: Platform.MICHAELS,
-    status: OrderStatus.PROCESSING,
-    customerName: "Grace Liu",
-    customerEmail: "grace@example.com",
-    total: 67.0,
-    createdAt: new Date("2026-03-15"),
-    items: [
-      { name: "Acrylic paint set", quantity: 1, price: 29.0 },
-      { name: "Canvas 12-pack", quantity: 1, price: 38.0 },
-    ],
-  },
-  {
-    externalId: "MCH-88232",
-    platform: Platform.MICHAELS,
-    status: OrderStatus.REFUNDED,
-    customerName: "Henry Park",
-    customerEmail: "henry@example.com",
-    total: 24.99,
-    createdAt: new Date("2026-03-03"),
-    items: [{ name: "Calligraphy starter kit", quantity: 1, price: 24.99 }],
-  },
 ];
 
 async function main() {

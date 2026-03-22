@@ -1,15 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { Platform, OrderStatus } from "@/generated/prisma/client";
 import { UserButton } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { OrdersTable } from "./_components/OrdersTable";
 import { PlatformFilter } from "./_components/PlatformFilter";
+import { PlatformConnections } from "./_components/PlatformConnections";
 
 const PLATFORM_COLORS: Record<Platform, string> = {
   ETSY: "bg-orange-100 text-orange-800",
   FAIRE: "bg-purple-100 text-purple-800",
   EBAY: "bg-blue-100 text-blue-800",
   AMAZON: "bg-yellow-100 text-yellow-800",
-  MICHAELS: "bg-green-100 text-green-800",
 };
 
 type SearchParams = { platform?: string; status?: string };
@@ -19,6 +20,7 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  const { userId } = await auth();
   const { platform, status } = await searchParams;
 
   const where = {
@@ -26,7 +28,7 @@ export default async function DashboardPage({
     ...(status && status !== "ALL" ? { status: status as OrderStatus } : {}),
   };
 
-  const [orders, counts, totals] = await Promise.all([
+  const [orders, counts, totals, etsyConnection] = await Promise.all([
     prisma.order.findMany({
       where,
       include: { items: true },
@@ -39,6 +41,10 @@ export default async function DashboardPage({
     prisma.order.aggregate({
       _count: { id: true },
       _sum: { total: true },
+    }),
+    prisma.platformConnection.findUnique({
+      where: { userId_platform: { userId: userId!, platform: "ETSY" } },
+      select: { platform: true, shopName: true, updatedAt: true },
     }),
   ]);
 
@@ -95,6 +101,9 @@ export default async function DashboardPage({
             </div>
           ))}
         </div>
+
+        {/* Platform connections */}
+        <PlatformConnections etsy={etsyConnection} />
 
         {/* Filters */}
         <div className="mb-6 flex flex-wrap gap-3">
