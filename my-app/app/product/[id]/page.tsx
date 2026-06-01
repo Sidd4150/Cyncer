@@ -12,7 +12,36 @@ export default async function ProductDetails({ params }: { params: Promise<{ id:
 
     return (
         <>
+            <div>Product Details</div>
 
+            <ul>
+
+
+                <li key={product.id}>
+
+                    {product.name}
+                    <br></br>
+
+                    {product.SKU}
+                    <br></br>
+
+                    {product.desc}
+
+                    <br></br>
+
+
+                    Platforms:
+                    <ul>
+                        {product.listings.map((l) => (
+                            <li key={l.id}>{l.platform}: {l.quantity} in Stock. Pricing: {l.price}</li>
+                        ))}
+                    </ul>
+
+
+
+                </li>
+
+            </ul>
         </>
     )
 }
