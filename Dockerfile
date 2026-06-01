@@ -1,7 +1,8 @@
 FROM node:20-slim
 WORKDIR /app
-COPY package*.json .
+COPY my-app/package*.json ./
 RUN npm install
-COPY . .
+COPY my-app/ ./
+RUN npx prisma generate
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
