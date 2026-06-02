@@ -5,37 +5,41 @@ Dad's Inventory Tracker — Build Plan
   Multi-channel inventory management app that syncs stock across eBay, Etsy, and Amazon in one dashboard.
 
   ---
-  Phase 1 — Project Setup
+  Phase 1 — Project Setup ✅
 
-  - Create Next.js app with TypeScript + Tailwind
-  - Add Dockerfile and docker-compose.yml (app + Postgres)
-  - Set up Prisma with PostgreSQL
-  - Create CLAUDE.md with project rules
-  - Push to GitHub
+  - [x] Create Next.js app with TypeScript + Tailwind
+  - [x] Add Dockerfile and docker-compose.yml (app + Postgres)
+  - [x] Set up Prisma with PostgreSQL
+  - [x] Create CLAUDE.md with project rules
+  - [x] Push to GitHub
 
-  Phase 2 — Database Schema
+  Phase 2 — Database Schema ✅
 
-  - Product model (name, SKU, description, images, category)
-  - Platform listing model (eBay/Etsy/Amazon link, platform-specific ID, price, status)
-  - Inventory model (quantity, warehouse location)
-  - Order model (platform, order ID, quantity, sale price, date, status)
-  - Seed database with sample products
+  - [x] Product model (name, SKU, description, images, category)
+  - [x] Platform listing model (eBay/Etsy/Amazon link, platform-specific ID, price, status)
+  - [x] Inventory — quantity lives on Listing (no separate model)
+  - [x] Order model (platform, order ID, quantity, sale price, date, status)
+  - [x] Seed database with sample products
 
-  Phase 3 — Core CRUD
+  Phase 3 — Core CRUD (partial)
 
-  - Products page — list all products with search/filter
-  - Add/edit/delete product form
-  - Product detail page showing stock levels + listings per platform
-  - Dashboard — total products, total stock, revenue summary
+  - [x] Products page — list all products with card UI and images
+  - [x] Product detail page showing stock levels + listings per platform
+  - [x] Dashboard — total products, total stock, listings breakdown
+  - [x] Orders page — list active orders with product info
+  - [ ] Search/filter on products page
+  - [ ] Add/edit/delete product form
+  - [ ] Revenue summary on dashboard
 
-  Phase 4 — Multi-Channel Sync
+  Phase 4 — Multi-Channel Sync (partial)
 
-  - eBay API integration — pull active listings and orders
-  - Etsy API integration — pull active listings and orders
-  - Amazon SP-API integration — pull active listings and orders
-  - Unified order feed — all orders in one table regardless of platform
-  - Stock sync — when an item sells on one platform, update quantity everywhere
-  - Alert when stock is low (configurable threshold)
+  - [x] Etsy OAuth PKCE flow (auth + callback routes)
+  - [x] Etsy listings sync — paginated, all 518 listings
+  - [x] Etsy orders sync — active orders (paid, not shipped, not canceled)
+  - [ ] eBay API integration — pull active listings and orders
+  - [ ] Amazon SP-API integration — pull active listings and orders
+  - [ ] Stock sync — when an item sells on one platform, update quantity everywhere
+  - [ ] Alert when stock is low (configurable threshold)
 
   Phase 5 — Analytics Dashboard
 
