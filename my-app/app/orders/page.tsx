@@ -1,14 +1,36 @@
 import prisma from "@/app/lib/prisma"
 import Link from "next/link"
 
-export default async function Orders() {
+export default async function Orders({
+    searchParams,
+}: {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+    const { platform } = await searchParams;
+    const platformFilter = platform as string | undefined;
 
-    const orders = await prisma.order.findMany({ include: { product: true } });
+    const where = platformFilter ? { platform: platformFilter } : {};
+    const orders = await prisma.order.findMany({ where, include: { product: true } });
 
     return (
         <div className="min-h-screen bg-gray-100 p-8">
             <h1 className="text-3xl font-bold mb-2">Active Orders</h1>
-            <p className="text-gray-500 mb-6">{orders.length} orders</p>
+            <p className="text-gray-500 mb-4">{orders.length} orders</p>
+
+            <div className="flex gap-2 mb-6">
+                <Link href="/orders" className={`px-3 py-1.5 rounded text-sm font-medium ${!platformFilter ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
+                    All
+                </Link>
+                <Link href="/orders?platform=etsy" className={`px-3 py-1.5 rounded text-sm font-medium ${platformFilter === "etsy" ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
+                    Etsy
+                </Link>
+                <Link href="/orders?platform=amazon" className={`px-3 py-1.5 rounded text-sm font-medium ${platformFilter === "amazon" ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
+                    Amazon
+                </Link>
+                <Link href="/orders?platform=ebay" className={`px-3 py-1.5 rounded text-sm font-medium ${platformFilter === "ebay" ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
+                    eBay
+                </Link>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {orders.map((order) => (
@@ -21,7 +43,12 @@ export default async function Orders() {
                                     className="w-full h-48 object-cover rounded mb-3"
                                 />
                             )}
-                            <h2 className="font-semibold text-lg truncate">{order.product.name}</h2>
+                            <div className="flex items-center justify-between">
+                                <h2 className="font-semibold text-lg truncate">{order.product.name}</h2>
+                                {order.platform === "etsy" && (
+                                    <img src="/etsy/Etsy_Logo_0.svg" alt="Etsy" className="h-4" />
+                                )}
+                            </div>
                             <p className="text-sm text-gray-500 mt-1">{order.orderId}</p>
                             <div className="flex justify-between items-center mt-3">
                                 <span className="text-sm text-gray-600">Qty: {order.quantity}</span>

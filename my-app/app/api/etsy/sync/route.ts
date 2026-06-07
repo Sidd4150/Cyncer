@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import { getValidToken } from "@/app/lib/etsyHelpers";
 
 export async function GET(request: NextRequest) {
-    const token = request.cookies.get("etsy_access_token")?.value;
+    const token = await getValidToken("etsy", process.env.ETSY_SHOP_ID!);
 
     if (!token) {
         return NextResponse.json({ error: "No auth, visit api/etsy/auth to verify" }, { status: 401 });
     }
-
+    // Need to not Hard code
     const shopId = process.env.ETSY_SHOP_ID;
     const limit = 100;
     let offset = 0;
@@ -54,40 +55,35 @@ export async function GET(request: NextRequest) {
                 await new Promise(r => setTimeout(r, 250));
             }
 
-            if (existing) {
-                await prisma.product.update({
-                    where: { SKU: sku },
-                    data: {
-                        name: item.title,
-                        listings: {
-                            updateMany: {
-                                where: { platformId: String(item.listing_id) },
-                                data: { quantity: item.quantity, price, status: item.state },
-                            },
+            await prisma.product.upsert({
+                where: { SKU: sku },
+                update: {
+                    name: item.title,
+                    listings: {
+                        updateMany: {
+                            where: { platformId: String(item.listing_id) },
+                            data: { quantity: item.quantity, price, status: item.state },
                         },
                     },
-                });
-            } else {
-                await prisma.product.create({
-                    data: {
-                        name: item.title,
-                        SKU: sku,
-                        desc: item.description || null,
-                        category: null,
-                        images,
-                        listings: {
-                            create: {
-                                platform: "etsy",
-                                platformId: String(item.listing_id),
-                                url: `https://www.etsy.com/listing/${item.listing_id}`,
-                                price,
-                                quantity: item.quantity,
-                                status: item.state,
-                            },
+                },
+                create: {
+                    name: item.title,
+                    SKU: sku,
+                    desc: item.description || null,
+                    category: null,
+                    images,
+                    listings: {
+                        create: {
+                            platform: "etsy",
+                            platformId: String(item.listing_id),
+                            url: `https://www.etsy.com/listing/${item.listing_id}`,
+                            price,
+                            quantity: item.quantity,
+                            status: item.state,
                         },
                     },
-                });
-            }
+                },
+            });
             synced++;
         }
 

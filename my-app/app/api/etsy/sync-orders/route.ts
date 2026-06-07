@@ -1,27 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkReceiptStatus, getValidToken } from "@/app/lib/etsyHelpers"
 import prisma from "@/app/lib/prisma";
 
 export async function GET(request: NextRequest) {
-    const token = request.cookies.get("etsy_access_token")?.value;
+    const token = await getValidToken("etsy", process.env.ETSY_SHOP_ID!);
 
     if (!token) {
         return NextResponse.json({ error: "No auth, visit api/etsy/auth to verify" }, { status: 401 });
     }
     const shopId = process.env.ETSY_SHOP_ID;
+
+    const headers = {
+        "x-api-key": `${process.env.ETSY_API_KEY}:${process.env.ETSY_SHARED_SECRET}`,
+        Authorization: `Bearer ${token}`,
+    }
     const response = await fetch(
         `https://openapi.etsy.com/v3/application/shops/${shopId}/receipts?was_paid=true&was_shipped=false&was_canceled=false`,
         {
-            headers: {
-                "x-api-key": `${process.env.ETSY_API_KEY}:${process.env.ETSY_SHARED_SECRET}`,
-                Authorization: `Bearer ${token}`,
-            },
+            headers: headers
         }
     );
     const data = await response.json();
-
+    console.log("This is the order sync", { data })
     if (!response.ok) {
         return NextResponse.json({ error: data }, { status: response.status });
     }
+
 
     let synced = 0;
 
@@ -31,7 +35,8 @@ export async function GET(request: NextRequest) {
             const product = await prisma.product.findUnique({ where: { SKU: sku } });
 
             if (!product) continue;
-
+            console.log("calling helper")
+            await checkReceiptStatus(receipt.receipt_id, headers)
             await prisma.order.upsert({
                 where: { orderId: `ETSY-${receipt.receipt_id}-${txn.transaction_id}` },
                 update: {
@@ -54,5 +59,4 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ synced, total: data.count });
-
 }

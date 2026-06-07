@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/app/lib/prisma"
 
+// Callback route for Etsy verification
+// Currenlty saves access token in cache changing it to save in database to allow for mutlipe etsy store connections
 export async function GET(request: NextRequest) {
     const code = request.nextUrl.searchParams.get("code");
     const codeVerifier = request.cookies.get("etsy_code_verifier")?.value;
@@ -34,6 +37,28 @@ export async function GET(request: NextRequest) {
         });
         // Clear the verifier
         res.cookies.delete("etsy_code_verifier");
+
+        //Save access and refresh to database
+        await prisma.platformToken.upsert({
+            where: {
+                platform_shopId: {
+                    platform: "etsy",
+                    shopId: process.env.ETSY_SHOP_ID!,
+                },
+            },
+            update: {
+                accessToken: data.access_token,
+                refreshToken: data.refresh_token,
+                expiresAt: new Date(Date.now() + data.expires_in * 1000),
+            },
+            create: {
+                platform: "etsy",
+                shopId: process.env.ETSY_SHOP_ID!,
+                accessToken: data.access_token,
+                refreshToken: data.refresh_token,
+                expiresAt: new Date(Date.now() + data.expires_in * 1000),
+            },
+        });
         return res;
     }
     return NextResponse.json({ error: data }, { status: 400 });
