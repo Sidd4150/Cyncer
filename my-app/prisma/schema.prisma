@@ -50,3 +50,16 @@ model Order {
   productId Int
   product   Product @relation(fields: [productId], references: [id])
 }
+// PlatformToken Model
+model PlatformToken {
+  id Int @id @default(autoincrement())
+  platform String
+  shopId String
+  accessToken String
+  refreshToken String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([platform, shopId])
+}
