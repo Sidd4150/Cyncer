@@ -1,6 +1,6 @@
 import prisma from "@/app/lib/prisma"
 import Link from "next/link"
-
+import SyncOrderButton from "@/app/components/SyncOrderButton"
 export default async function Orders({
     searchParams,
 }: {
@@ -16,8 +16,9 @@ export default async function Orders({
         <div className="min-h-screen bg-gray-100 p-8">
             <h1 className="text-3xl font-bold mb-2">Active Orders</h1>
             <p className="text-gray-500 mb-4">{orders.length} orders</p>
-
+            <SyncOrderButton></SyncOrderButton>
             <div className="flex gap-2 mb-6">
+
                 <Link href="/orders" className={`px-3 py-1.5 rounded text-sm font-medium ${!platformFilter ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
                     All
                 </Link>
@@ -64,6 +65,6 @@ export default async function Orders({
                     </Link>
                 ))}
             </div>
-        </div>
+        </div >
     )
 }

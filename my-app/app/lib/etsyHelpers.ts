@@ -1,4 +1,5 @@
 import prisma from "@/app/lib/prisma"
+import { NextResponse } from "next/server";
 
 export async function checkReceiptStatus(receiptId: string, headers: Record<string, string>) {
     const shopId = process.env.ETSY_SHOP_ID;
@@ -22,29 +23,33 @@ export async function getValidToken(platform: string, shopId: string,) {
         return tokenRow.accessToken;
     }
 
-    const res = await fetch("https://api.etsy.com/v3/public/oauth/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            grant_type: "refresh_token",
-            client_id: process.env.ETSY_API_KEY!,
-            refresh_token: tokenRow.refreshToken,
-        }),
-    });
+    try {
+        const res = await fetch("https://api.etsy.com/v3/public/oauth/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                grant_type: "refresh_token",
+                client_id: process.env.ETSY_API_KEY!,
+                refresh_token: tokenRow.refreshToken,
+            }),
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    if (!data.access_token) return null;
+        if (!data.access_token) return null;
 
-    await prisma.platformToken.update({
-        where: { id: tokenRow.id },
-        data: {
-            accessToken: data.access_token,
-            refreshToken: data.refresh_token,
-            expiresAt: new Date(Date.now() + data.expires_in * 1000),
-        },
-    });
+        await prisma.platformToken.update({
+            where: { id: tokenRow.id },
+            data: {
+                accessToken: data.access_token,
+                refreshToken: data.refresh_token,
+                expiresAt: new Date(Date.now() + data.expires_in * 1000),
+            },
+        });
 
-    return data.access_token;
+        return data.access_token;
+    } catch (error) {
+        return NextResponse.json({ error: "failed token fetch" }, { status: 500 });
+    }
 
 }

@@ -14,49 +14,52 @@ export async function GET(request: NextRequest) {
         "x-api-key": `${process.env.ETSY_API_KEY}:${process.env.ETSY_SHARED_SECRET}`,
         Authorization: `Bearer ${token}`,
     }
-    const response = await fetch(
-        `https://openapi.etsy.com/v3/application/shops/${shopId}/receipts?was_paid=true&was_shipped=false&was_canceled=false`,
-        {
-            headers: headers
+    try {
+        const response = await fetch(
+            `https://openapi.etsy.com/v3/application/shops/${shopId}/receipts?was_paid=true&was_shipped=false&was_canceled=false`,
+            {
+                headers: headers
+            }
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+            return NextResponse.json({ error: data }, { status: response.status });
         }
-    );
-    const data = await response.json();
-    console.log("This is the order sync", { data })
-    if (!response.ok) {
-        return NextResponse.json({ error: data }, { status: response.status });
-    }
 
+        let synced = 0;
 
-    let synced = 0;
+        for (const receipt of data.results) {
+            for (const txn of receipt.transactions) {
+                const sku = `ETSY-${txn.listing_id}`;
+                const product = await prisma.product.findUnique({ where: { SKU: sku } });
 
-    for (const receipt of data.results) {
-        for (const txn of receipt.transactions) {
-            const sku = `ETSY-${txn.listing_id}`;
-            const product = await prisma.product.findUnique({ where: { SKU: sku } });
+                if (!product) continue;
 
-            if (!product) continue;
-            console.log("calling helper")
-            await checkReceiptStatus(receipt.receipt_id, headers)
-            await prisma.order.upsert({
-                where: { orderId: `ETSY-${receipt.receipt_id}-${txn.transaction_id}` },
-                update: {
-                    status: receipt.status,
-                    quantity: txn.quantity,
-                    salePrice: txn.price.amount / txn.price.divisor,
-                },
-                create: {
-                    platform: "etsy",
-                    orderId: `ETSY-${receipt.receipt_id}-${txn.transaction_id}`,
-                    quantity: txn.quantity,
-                    salePrice: txn.price.amount / txn.price.divisor,
-                    date: new Date(receipt.create_timestamp * 1000),
-                    status: receipt.status,
-                    productId: product.id,
-                },
-            });
-            synced++;
+                await checkReceiptStatus(receipt.receipt_id, headers)
+                await prisma.order.upsert({
+                    where: { orderId: `ETSY-${receipt.receipt_id}-${txn.transaction_id}` },
+                    update: {
+                        status: receipt.status,
+                        quantity: txn.quantity,
+                        salePrice: txn.price.amount / txn.price.divisor,
+                    },
+                    create: {
+                        platform: "etsy",
+                        orderId: `ETSY-${receipt.receipt_id}-${txn.transaction_id}`,
+                        quantity: txn.quantity,
+                        salePrice: txn.price.amount / txn.price.divisor,
+                        date: new Date(receipt.create_timestamp * 1000),
+                        status: receipt.status,
+                        productId: product.id,
+                    },
+                });
+                synced++;
+            }
         }
-    }
 
-    return NextResponse.json({ synced, total: data.count });
+        return NextResponse.json({ synced, total: data.count });
+    } catch (error) {
+        return NextResponse.json({ error: "Order sync failed" }, { status: 500 });
+    }
 }
