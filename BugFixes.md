@@ -17,7 +17,7 @@ Status legend: 🔴 open bug · 🟡 improvement/design decision · ✅ fixed si
 
 4. 🔴 **PKCE cookie flags.** `etsy_code_verifier` is set with only `httpOnly` + `maxAge`. Add `sameSite: "lax"`, `path: "/api/etsy"`, and `secure` (in prod) so the cookie reliably survives the redirect round-trip to etsy.com.
 
-5. 🔴 **`etsyHelpers.ts:52` — `getValidToken` returns a `NextResponse` on refresh failure.** The `catch` returns `NextResponse.json(...)`, which is *truthy*, so callers in `sync/route.ts:6` and `sync-orders/route.ts:6` pass the check and send `Bearer [object Response]` to Etsy. Return `null` instead — this is a one-line fix.
+5. ✅ **`etsyHelpers.ts` — `getValidToken` returns a `NextResponse` on refresh failure.** Fixed 2026-08-04: `catch` now `console.error`s and returns `null`, so the `if (!token)` guards in both sync routes work correctly. Removed the now-unused `NextResponse` import.
 
 6. 🔴 **`sync/route.ts:40` — `price` can be `NaN`.** `item.price?.amount / item.price?.divisor` — if `price` is missing, `undefined / undefined = NaN` goes into the DB (or throws in Prisma). Guard: `const price = item.price ? item.price.amount / item.price.divisor : 0`.
 
@@ -101,7 +101,7 @@ Status legend: 🔴 open bug · 🟡 improvement/design decision · ✅ fixed si
 
 ## Quick wins (do first, ~30 min total)
 
-- Fix `getValidToken` returning `NextResponse` → return `null` (#5) — **this one actively breaks sync after token expiry**
+- ✅ Fix `getValidToken` returning `NextResponse` → return `null` (#5) — done 2026-08-04
 - Fix `crpyto` typo (#2)
 - Prisma `globalThis` singleton (#13)
 - Guard `NaN` price (#6) and `NaN` product id (#7)

@@ -1,5 +1,4 @@
 import prisma from "@/app/lib/prisma"
-import { NextResponse } from "next/server";
 
 export async function checkReceiptStatus(receiptId: string, headers: Record<string, string>) {
     const shopId = process.env.ETSY_SHOP_ID;
@@ -49,7 +48,8 @@ export async function getValidToken(platform: string, shopId: string,) {
 
         return data.access_token;
     } catch (error) {
-        return NextResponse.json({ error: "failed token fetch" }, { status: 500 });
+        console.error("Etsy token refresh failed:", error);
+        return null;
     }
 
 }
