@@ -11,7 +11,7 @@ Status legend: 🔴 open bug · 🟡 improvement/design decision · ✅ fixed si
 
 1. ✅ **`SyncOrderButton` missing `'use client'`** — fixed. Has the directive now.
 
-2. 🔴 **`api/etsy/auth/route.ts:2` — `crpyto` typo.** `import crpyto from "crypto"` propagated through the file. Works only because the name is arbitrary; rename to `crypto`.
+2. ✅ **`api/etsy/auth/route.ts:2` — `crpyto` typo.** Fixed 2026-08-04: renamed the import and both usages to `crypto`.
 
 3. 🔴 **OAuth `state` never verified (CSRF).** `auth/route.ts:11` generates `state` but nothing stores it, and `callback/route.ts` never checks it. Also `state` is made with `Math.random()` — use `crypto.randomBytes(16).toString('base64url')`, store it in a cookie alongside the verifier, and compare in the callback.
 
@@ -102,7 +102,7 @@ Status legend: 🔴 open bug · 🟡 improvement/design decision · ✅ fixed si
 ## Quick wins (do first, ~30 min total)
 
 - ✅ Fix `getValidToken` returning `NextResponse` → return `null` (#5) — done 2026-08-04
-- Fix `crpyto` typo (#2)
+- ✅ Fix `crpyto` typo (#2) — done 2026-08-04
 - Prisma `globalThis` singleton (#13)
 - Guard `NaN` price (#6) and `NaN` product id (#7)
 - Delete redundant `checkReceiptStatus` call (#12) and unused `orders` query in dashboard (#20)
