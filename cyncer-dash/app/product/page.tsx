@@ -1,5 +1,6 @@
 import prisma from "@/app/lib/prisma"
 import Link from "next/link"
+import Pagination from "@/app/components/Pagination"
 
 const PAGE_SIZE = 24;
 
@@ -33,6 +34,10 @@ export default async function Product({
             <h1 className="text-3xl font-bold mb-2">Products</h1>
             <p className="text-gray-500 mb-4">{totalCount} products | Page {currentPage} of {totalPages}</p>
 
+            <div className="mb-6">
+                <Pagination currentPage={currentPage} totalPages={totalPages} />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {products.map((product) => {
                     const stock = product.listings.reduce((sum, l) => sum + l.quantity, 0);
@@ -60,23 +65,8 @@ export default async function Product({
                 })}
             </div>
 
-            <div className="flex justify-center gap-4 mt-8">
-                {currentPage > 1 && (
-                    <Link
-                        href={`/product?page=${currentPage - 1}`}
-                        className="px-4 py-2 bg-white rounded shadow hover:shadow-md"
-                    >
-                        Previous
-                    </Link>
-                )}
-                {currentPage < totalPages && (
-                    <Link
-                        href={`/product?page=${currentPage + 1}`}
-                        className="px-4 py-2 bg-white rounded shadow hover:shadow-md"
-                    >
-                        Next
-                    </Link>
-                )}
+            <div className="mt-8">
+                <Pagination currentPage={currentPage} totalPages={totalPages} />
             </div>
         </div>
     )
