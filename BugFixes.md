@@ -55,7 +55,7 @@ Status legend: 🔴 open bug · 🟡 improvement/design decision · ✅ fixed si
 
 ## Improvements / UX
 
-20. 🟡 **`dashboard/page.tsx` loads everything into memory.** `listing.findMany()` + `order.findMany()` (the latter is *completely unused* — delete it), then renders one `<li>` per listing — that's 518 rows of "etsy — N in stock". Use `prisma.listing.aggregate({ _sum: { quantity: true } })` and `groupBy` for per-platform stats; this is the natural place to start Phase 5 stat cards.
+20. ✅ **`dashboard/page.tsx` loads everything into memory.** Fixed 2026-08-04: replaced the two `findMany` calls and the 518-row `<li>` list with three aggregate/count queries (`product.count`, `order.count`, `listing.aggregate({ _sum: { quantity: true } })`) rendered as Products / Total Stock / Current Orders stat cards. Per-platform `groupBy` breakdown still open for Phase 5.
 
 21. 🟡 **`SyncOrderButton` has no error/loading state.** On a failed sync, `data.synced` is `undefined` → alert says "Synced undefined orders". Add `res.ok` handling, a disabled/spinner state while syncing, and prefer `router.refresh()` over `window.location.reload()` + `alert()`.
 
