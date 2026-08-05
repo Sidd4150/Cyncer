@@ -3,15 +3,24 @@ import Link from "next/link"
 export default function Pagination({
     currentPage,
     totalPages,
+    store,
 }: {
     currentPage: number
     totalPages: number
+    store?: string
 }) {
+    const href = (page: number) => {
+        const params = new URLSearchParams()
+        params.set("page", String(page))
+        if (store) params.set("store", store)
+        return `/product?${params.toString()}`
+    }
+
     return (
         <div className="flex justify-center gap-4">
             {currentPage > 1 && (
                 <Link
-                    href={`/product?page=${currentPage - 1}`}
+                    href={href(currentPage - 1)}
                     className="px-4 py-2 bg-white rounded shadow hover:shadow-md"
                 >
                     Previous
@@ -19,7 +28,7 @@ export default function Pagination({
             )}
             {currentPage < totalPages && (
                 <Link
-                    href={`/product?page=${currentPage + 1}`}
+                    href={href(currentPage + 1)}
                     className="px-4 py-2 bg-white rounded shadow hover:shadow-md"
                 >
                     Next

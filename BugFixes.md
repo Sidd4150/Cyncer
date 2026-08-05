@@ -19,23 +19,25 @@ Status legend: 🔴 open bug · 🟡 improvement/design decision · ✅ fixed si
 
 5. ✅ **`etsyHelpers.ts` — `getValidToken` returns a `NextResponse` on refresh failure.** Fixed 2026-08-04: `catch` now `console.error`s and returns `null`, so the `if (!token)` guards in both sync routes work correctly. Removed the now-unused `NextResponse` import.
 
-6. 🔴 **`sync/route.ts:40` — `price` can be `NaN`.** `item.price?.amount / item.price?.divisor` — if `price` is missing, `undefined / undefined = NaN` goes into the DB (or throws in Prisma). Guard: `const price = item.price ? item.price.amount / item.price.divisor : 0`.
+6. ✅ **`sync/route.ts` — `price` can be `NaN`.** Fixed 2026-08-04 (multi-store rework): `const price = item.price ? item.price.amount / item.price.divisor : 0`.
 
 7. 🔴 **`product/[id]/page.tsx:7` — non-numeric id crashes.** `parseInt(id)` on `/product/abc` gives `NaN`, Prisma throws, user gets a 500 instead of the "not found" branch. Check `Number.isNaN` first and call Next's `notFound()`.
 
 8. 🔴 **Sync routes mutate via GET.** `/api/etsy/sync` and `/api/etsy/sync-orders` are `GET` handlers that write to the DB. Browsers, prefetchers, and crawlers can trigger them. Make them `POST` (update `SyncOrderButton` to `fetch(..., { method: "POST" })`).
 
-9. 🔴 **`sync/route.ts` pagination fragility.** `offset += limit` runs regardless of what came back; if Etsy returns `results: undefined` with a 200, the `for...of` throws and the whole sync 500s mid-run. Break the loop when `!data.results?.length` and treat `data.count` defensively.
+9. ✅ **`sync/route.ts` pagination fragility.** Fixed 2026-08-04: breaks when `!data.results?.length` and treats `data.count` defensively (`?? 0`). Same guard applied to `sync-orders`.
 
 10. 🔴 **`sync/route.ts:60-88` — update branch is incomplete.** For an existing SKU only matching listings get `updateMany`; a new platform listing on an existing product is silently dropped, and `desc`/`images` never refresh. Fine while Etsy-only; will lose data once eBay/Amazon land.
 
-11. 🔴 **`sync-orders/route.ts` — unpaginated.** Single receipts page (Etsy default limit 25). Needs the same offset/limit loop as the listings sync.
+11. ✅ **`sync-orders/route.ts` — unpaginated.** Fixed 2026-08-04: now uses the same `limit`/`offset` loop as the listings sync.
 
-12. 🔴 **`sync-orders/route.ts:39` — redundant N+1 API call.** `checkReceiptStatus` re-fetches each receipt *per transaction*, awaits it, discards the result, and `console.log`s the payload. Everything it fetches is already on the `receipt` object in hand. Remove the call (and the helper, or repurpose it later for shipped-status polling).
+12. ✅ **`sync-orders/route.ts` — redundant N+1 API call.** Fixed 2026-08-04: removed the `checkReceiptStatus` call and deleted the helper (data was already on the `receipt` object).
 
 13. 🔴 **No Prisma singleton in `lib/prisma.ts`.** Every hot reload in `next dev` creates a new client and pool connection until Postgres runs out. Use the standard `globalThis` caching pattern.
 
 14. 🔴 **`Listing` has no `@@unique([platform, platformId])`.** Nothing prevents duplicate listing rows for the same Etsy `listing_id` (e.g., if the create branch ever re-runs). Add the constraint + migration before sync runs get frequent.
+
+39. ✅ **Orders sync never reconciled — shipped orders lingered forever.** Found & fixed 2026-08-04. `sync-orders` only upserts the *active* feed (`was_shipped=false`), so once an order shipped it dropped out of the feed and its DB row stayed frozen at `Paid`; the "Active Orders" page (`findMany`, no filter) kept showing it. Now the sync collects the active `orderId`s and, after a fully successful fetch, `deleteMany({ storeId, platform: "etsy", orderId: { notIn: activeOrderIds } })` — deletion runs inside the `try` so a mid-sync error never wipes live orders. (Chosen over a soft `active` flag; revisit if Phase 5 analytics need shipped-order history.)
 
 15. 🔴 **Token refresh race.** Etsy rotates refresh tokens on every refresh. If listings-sync and orders-sync run concurrently while the token is expired, both refresh, and the loser writes a dead refresh token to the DB — auth silently breaks until you reconnect. Low likelihood now; worth serializing (e.g., a small in-process lock) before cron jobs in Phase 6.
 
@@ -45,9 +47,9 @@ Status legend: 🔴 open bug · 🟡 improvement/design decision · ✅ fixed si
 
 16. 🔴 **No auth on `/api/etsy/sync*`.** Anyone who can reach the server can trigger syncs (and, combined with #8, even by accident). Gate with a shared-secret header at minimum before deploying (Phase 7).
 
-17. 🟡 **`x-api-key` sends `${KEY}:${SECRET}`.** Etsy v3 docs specify just the keystring in `x-api-key`; the shared secret shouldn't ride on every request (it leaks into logs/proxies). Past testing suggested the `key:secret` form was needed — re-verify with plain key, and drop the secret if it works.
+17. ✅ **`x-api-key` sends `${KEY}:${SECRET}`.** Resolved 2026-08-04 — false alarm. Etsy's v3 authentication docs explicitly require `x-api-key` to contain _keystring_ and _shared secret_ separated by a colon, so the current form is correct. Now centralized in `etsyHeaders()`.
 
-18. 🟡 **Shop ID hardcoded via `ETSY_SHOP_ID`.** The `PlatformToken` schema supports multi-shop (`@@unique([platform, shopId])`), but every route reads one env var, so the multi-store DB work isn't actually usable yet. Iterate over `platformToken.findMany({ where: { platform: "etsy" } })` in sync routes instead.
+18. ✅ **Shop ID hardcoded via `ETSY_SHOP_ID`.** Fixed 2026-08-04 (Phase 4.5 multi-store): sync routes now iterate `platformToken.findMany({ where: { platform: "etsy" } })`, and the OAuth callback resolves the real shop from the token (`getShopForToken`) instead of the env var, so multiple Etsy stores no longer overwrite each other. See new `Store` model + per-listing/order `storeId`.
 
 19. 🟡 **Docker Postgres exposed with default creds.** `5432:5432` published to the host with `postgres/postgres`. Fine on your laptop; for the Phase 7 home-server deploy, remove the port mapping (app talks over the compose network) and set a real password.
 
@@ -57,7 +59,7 @@ Status legend: 🔴 open bug · 🟡 improvement/design decision · ✅ fixed si
 
 20. ✅ **`dashboard/page.tsx` loads everything into memory.** Fixed 2026-08-04: replaced the two `findMany` calls and the 518-row `<li>` list with three aggregate/count queries (`product.count`, `order.count`, `listing.aggregate({ _sum: { quantity: true } })`) rendered as Products / Total Stock / Current Orders stat cards. Per-platform `groupBy` breakdown still open for Phase 5.
 
-21. 🟡 **`SyncOrderButton` has no error/loading state.** On a failed sync, `data.synced` is `undefined` → alert says "Synced undefined orders". Add `res.ok` handling, a disabled/spinner state while syncing, and prefer `router.refresh()` over `window.location.reload()` + `alert()`.
+21. 🟡 **`SyncOrderButton` has no error/loading state.** Partially addressed 2026-08-04: it now sums `synced` across the new `{ stores: [...] }` response (no more "Synced undefined orders"). Still open: `res.ok` handling, a disabled/spinner state while syncing, and `router.refresh()` over `window.location.reload()` + `alert()`.
 
 22. 🟡 **No UI to trigger the listings sync.** Orders have a button; `/api/etsy/sync` must be hit by hand in the URL bar. Add a "Sync Listings" button (with the caveat below).
 
@@ -65,9 +67,9 @@ Status legend: 🔴 open bug · 🟡 improvement/design decision · ✅ fixed si
 
 24. 🟡 **Dead `includes=images` param / avoidable image N+1.** `sync/route.ts:21` passes `includes=images` but never reads images off the listing response — then does a separate images request per new product. Etsy's `getListingsByShop` supports `includes=Images` (capital I); if that returns `item.images`, you can drop the per-listing fetch and the 250ms sleeps entirely.
 
-25. 🟡 **`orders/page.tsx` — no `orderBy`, no pagination.** Orders render in arbitrary DB order; add `orderBy: { date: "desc" }` now, pagination when volume grows.
+25. 🟡 **`orders/page.tsx` — no `orderBy`, no pagination.** `orderBy: { date: "desc" }` added 2026-08-04. Pagination still open for when order volume grows.
 
-26. 🟡 **OAuth callback ends on raw JSON.** After connecting, the user lands on `{"success":true,...}`. Redirect to `/dashboard?connected=etsy` and show a banner instead.
+26. ✅ **OAuth callback ends on raw JSON.** Fixed 2026-08-04: the callback now `redirect`s to `/dashboard?connected=etsy` after saving the token/store. (Banner on the dashboard still TODO.)
 
 27. 🟡 **`seed.ts` wipes all data unconditionally.** `deleteMany()` on orders/listings/products — one accidental `prisma db seed` after real Etsy syncs erases everything. Guard it: refuse to run unless `NODE_ENV !== "production"` or an explicit `SEED_CONFIRM=1` is set.
 
@@ -104,8 +106,8 @@ Status legend: 🔴 open bug · 🟡 improvement/design decision · ✅ fixed si
 - ✅ Fix `getValidToken` returning `NextResponse` → return `null` (#5) — done 2026-08-04
 - ✅ Fix `crpyto` typo (#2) — done 2026-08-04
 - Prisma `globalThis` singleton (#13)
-- Guard `NaN` price (#6) and `NaN` product id (#7)
-- Delete redundant `checkReceiptStatus` call (#12) and unused `orders` query in dashboard (#20)
+- ✅ Guard `NaN` price (#6) — done 2026-08-04; `NaN` product id (#7) still open
+- ✅ Delete redundant `checkReceiptStatus` call (#12) and unused `orders` query in dashboard (#20) — done 2026-08-04
 - `@@unique([platform, platformId])` on `Listing` (#14)
 - `redirect("/dashboard")` in `app/page.tsx` (#29)
 - Seed script guard (#27)

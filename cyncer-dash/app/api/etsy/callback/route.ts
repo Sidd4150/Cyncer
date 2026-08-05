@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma"
+import { getShopForToken } from "@/app/lib/etsyHelpers";
 
-// Callback route for Etsy verification
-// Currenlty saves access token in cache changing it to save in database to allow for mutlipe etsy store connections
+// Callback route for Etsy OAuth. Resolves which shop connected (from the token)
+// so multiple Etsy stores can be connected without overwriting each other.
 export async function GET(request: NextRequest) {
     const code = request.nextUrl.searchParams.get("code");
     const codeVerifier = request.cookies.get("etsy_code_verifier")?.value;
@@ -30,15 +31,22 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: data }, { status: 400 });
         }
 
-        const res = NextResponse.json({ success: true, message: "Etsy connected!" });
-        res.cookies.delete("etsy_code_verifier");
+        // Resolve which shop this token belongs to instead of trusting the env var
+        const shop = await getShopForToken(data.access_token);
+        const shopId = shop?.shopId ?? process.env.ETSY_SHOP_ID!;
+        const name = shop?.name ?? `Shop ${shopId}`;
 
-        // Save access and refresh to database
+        await prisma.store.upsert({
+            where: { platform_shopId: { platform: "etsy", shopId } },
+            update: { name },
+            create: { platform: "etsy", shopId, name },
+        });
+
         await prisma.platformToken.upsert({
             where: {
                 platform_shopId: {
                     platform: "etsy",
-                    shopId: process.env.ETSY_SHOP_ID!,
+                    shopId,
                 },
             },
             update: {
@@ -48,14 +56,18 @@ export async function GET(request: NextRequest) {
             },
             create: {
                 platform: "etsy",
-                shopId: process.env.ETSY_SHOP_ID!,
+                shopId,
                 accessToken: data.access_token,
                 refreshToken: data.refresh_token,
                 expiresAt: new Date(Date.now() + data.expires_in * 1000),
             },
         });
+
+        const res = NextResponse.redirect(new URL("/dashboard?connected=etsy", request.url));
+        res.cookies.delete("etsy_code_verifier");
         return res;
     } catch (error) {
+        console.error("Etsy token exchange failed:", error);
         return NextResponse.json({ error: "Failed to exchange token" }, { status: 500 });
     }
 }

@@ -1,14 +1,40 @@
 import prisma from "@/app/lib/prisma"
 
-export async function checkReceiptStatus(receiptId: string, headers: Record<string, string>) {
-    const shopId = process.env.ETSY_SHOP_ID;
+// Standard headers for Etsy v3 calls. x-api-key must be keystring:shared_secret.
+export function etsyHeaders(token?: string): Record<string, string> {
+    const headers: Record<string, string> = {
+        "x-api-key": `${process.env.ETSY_API_KEY}:${process.env.ETSY_SHARED_SECRET}`,
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+}
+
+// Resolve which shop an access token belongs to. The token is "{user_id}.{rest}",
+// and /users/{user_id}/shops returns that owner's shop (id + name).
+export async function getShopForToken(token: string) {
+    const userId = token.split(".")[0];
     const res = await fetch(
-        `https://openapi.etsy.com/v3/application/shops/${shopId}/receipts/${receiptId}`,
-        { headers }
+        `https://openapi.etsy.com/v3/application/users/${userId}/shops`,
+        { headers: etsyHeaders(token) }
     );
+    if (!res.ok) return null;
     const data = await res.json();
-    console.log("This is the checkRecepit", { data })
-    return data;
+    const shop = data.results?.[0] ?? data;
+    if (!shop?.shop_id) return null;
+    return { shopId: String(shop.shop_id), name: (shop.shop_name as string) || `Shop ${shop.shop_id}` };
+}
+
+// Ensure a Store row exists for a connected shop, fetching its display name once.
+export async function ensureStore(platform: string, shopId: string, token: string) {
+    const existing = await prisma.store.findUnique({
+        where: { platform_shopId: { platform, shopId } },
+    });
+    if (existing) return existing;
+
+    const shop = await getShopForToken(token);
+    return prisma.store.create({
+        data: { platform, shopId, name: shop?.name || `Shop ${shopId}` },
+    });
 }
 
 export async function getValidToken(platform: string, shopId: string,) {

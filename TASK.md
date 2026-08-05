@@ -41,6 +41,26 @@ Dad's Inventory Tracker — Build Plan
   - [ ] Stock sync — when an item sells on one platform, update quantity everywhere
   - [ ] Alert when stock is low (configurable threshold)
 
+  Phase 4.5 — Multi-Store Support (per-store tagging & filtering)
+
+  Goal: connect multiple Etsy shops (e.g. the ornament store + the paper store)
+  and tag every listing/order with which store it came from, so they can be
+  filtered by store. Decided design: a Store model (not a plain string tag).
+
+  - [x] Schema: add Store model (platform, shopId, name, @@unique([platform, shopId]));
+        add nullable storeId + relation to Listing and Order
+  - [x] prisma db push + regenerate client
+  - [ ] Create Store row for the currently connected shop (shopId 44743268) and
+        backfill existing Listings/Orders to it — happens automatically on next
+        sync (ensureStore + storeId stamping); existing rows are null until then
+  - [x] Make sync store-aware: loops over PlatformToken rows instead of the single
+        ETSY_SHOP_ID env var; ensures a Store per shop; stamps Listing/Order storeId
+  - [x] Products page: filter by store (tabs of store names)
+  - [x] Orders page: add store filter alongside the platform tabs
+  - [x] Fix OAuth callback to fetch the real shop id + name from Etsy (getShopForToken)
+        and upsert a Store + PlatformToken under it, so connecting the paper store
+        no longer overwrites the ornament store; redirects to /dashboard after
+
   Phase 5 — Analytics Dashboard
 
   - Revenue by platform (bar chart)

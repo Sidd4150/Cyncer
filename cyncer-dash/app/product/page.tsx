@@ -9,33 +9,47 @@ export default async function Product({
 }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-    const { page } = await searchParams;
+    const { page, store } = await searchParams;
     const currentPage = Math.max(1, parseInt(page as string) || 1);
     const skip = (currentPage - 1) * PAGE_SIZE;
 
-    const [products, totalCount] = await Promise.all([
+    const storeId = store ? Number(store) : undefined;
+    const where = storeId ? { listings: { some: { storeId } } } : {};
+
+    const [products, totalCount, stores] = await Promise.all([
         prisma.product.findMany({
+            where,
             include: { listings: true },
             skip,
             take: PAGE_SIZE,
             orderBy: { id: "asc" },
         }),
-        prisma.product.count(),
+        prisma.product.count({ where }),
+        prisma.store.findMany({ orderBy: { name: "asc" } }),
     ]);
 
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
-    const totalStock = products.reduce(
-        (sum, p) => sum + p.listings.reduce((s, l) => s + l.quantity, 0), 0
-    );
 
     return (
         <div className="min-h-screen bg-gray-100 p-8">
             <h1 className="text-3xl font-bold mb-2">Products</h1>
             <p className="text-gray-500 mb-4">{totalCount} products | Page {currentPage} of {totalPages}</p>
 
+            {stores.length > 0 && (
+                <div className="flex gap-2 mb-6 flex-wrap">
+                    <Link href="/product" className={`px-3 py-1.5 rounded text-sm font-medium ${!storeId ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
+                        All Stores
+                    </Link>
+                    {stores.map((s) => (
+                        <Link key={s.id} href={`/product?store=${s.id}`} className={`px-3 py-1.5 rounded text-sm font-medium ${storeId === s.id ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
+                            {s.name}
+                        </Link>
+                    ))}
+                </div>
+            )}
+
             <div className="mb-6">
-                <Pagination currentPage={currentPage} totalPages={totalPages} />
+                <Pagination currentPage={currentPage} totalPages={totalPages} store={store as string | undefined} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -66,7 +80,7 @@ export default async function Product({
             </div>
 
             <div className="mt-8">
-                <Pagination currentPage={currentPage} totalPages={totalPages} />
+                <Pagination currentPage={currentPage} totalPages={totalPages} store={store as string | undefined} />
             </div>
         </div>
     )

@@ -6,18 +6,40 @@ export default async function Orders({
 }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-    const { platform } = await searchParams;
+    const { platform, store } = await searchParams;
     const platformFilter = platform as string | undefined;
+    const storeId = store ? Number(store) : undefined;
 
-    const where = platformFilter ? { platform: platformFilter } : {};
-    const orders = await prisma.order.findMany({ where, include: { product: true } });
+    const where = {
+        ...(platformFilter ? { platform: platformFilter } : {}),
+        ...(storeId ? { storeId } : {}),
+    };
+
+    const [orders, stores] = await Promise.all([
+        prisma.order.findMany({ where, include: { product: true }, orderBy: { date: "desc" } }),
+        prisma.store.findMany({ orderBy: { name: "asc" } }),
+    ]);
 
     return (
         <div className="min-h-screen bg-gray-100 p-8">
             <h1 className="text-3xl font-bold mb-2">Active Orders</h1>
             <p className="text-gray-500 mb-4">{orders.length} orders</p>
             <SyncOrderButton></SyncOrderButton>
-            <div className="flex gap-2 mb-6">
+
+            {stores.length > 0 && (
+                <div className="flex gap-2 mt-4 mb-2 flex-wrap">
+                    <Link href="/orders" className={`px-3 py-1.5 rounded text-sm font-medium ${!storeId ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
+                        All Stores
+                    </Link>
+                    {stores.map((s) => (
+                        <Link key={s.id} href={`/orders?store=${s.id}`} className={`px-3 py-1.5 rounded text-sm font-medium ${storeId === s.id ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
+                            {s.name}
+                        </Link>
+                    ))}
+                </div>
+            )}
+
+            <div className="flex gap-2 mt-4 mb-6">
 
                 <Link href="/orders" className={`px-3 py-1.5 rounded text-sm font-medium ${!platformFilter ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
                     All

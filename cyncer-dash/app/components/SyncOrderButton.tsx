@@ -4,7 +4,8 @@ export default function SyncOrderButton() {
     const handlesync = async () => {
         const res = await fetch("/api/etsy/sync-orders")
         const data = await res.json();
-        alert(`Synced ${data.synced} orders`);
+        const synced = (data.stores ?? []).reduce((sum: number, s: any) => sum + (s.synced ?? 0), 0);
+        alert(`Synced ${synced} orders`);
         window.location.reload();
     };
 
