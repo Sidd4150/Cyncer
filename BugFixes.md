@@ -75,7 +75,7 @@ Status legend: 🔴 open bug · 🟡 improvement/design decision · ✅ fixed si
 
 28. 🟡 **Dead code:** `totalStock` in `product/page.tsx:27-29` is computed but never rendered (and would be per-page only). Delete or display it. Same for the unused `request` params in the sync route handlers.
 
-29. 🟡 **`app/page.tsx` is a stub** (`<h1>Hello</h1>`). `redirect("/dashboard")` is one line.
+29. ✅ **`app/page.tsx` is a stub** (`<h1>Hello</h1>`). Fixed 2026-08-04: replaced with a real public landing page (hero, features, how-it-works, supported marketplaces) with `metadata` for title/description — also satisfies the Amazon SP-API public-website requirement. Design overhaul tracked as TASK.md Phase 8.
 
 30. 🟡 **Use `next/image` instead of `<img>`.** 570px Etsy images at ~24 per products page, unoptimized and layout-shifting. `next/image` needs `images.remotePatterns` for `i.etsystatic.com` in `next.config.ts`.
 

@@ -83,6 +83,20 @@ Dad's Inventory Tracker — Build Plan
   - Set up domain with DuckDNS
   - Nginx reverse proxy with HTTPS (Let's Encrypt)
 
+  Phase 8 — Theme / Design / UX-UI Overhaul (future)
+
+  The current UI is intentionally plain, functional Tailwind (gray-100 bg,
+  white cards, blue accents). Revisit as a dedicated design pass once features
+  are done.
+
+  - [ ] Define a real visual identity: color palette, typography, logo, spacing scale
+  - [ ] Design system / shared components (buttons, cards, tabs, tables, badges)
+  - [ ] Redesign landing page, dashboard, product, and orders pages to match
+  - [ ] Dark mode
+  - [ ] Responsive / mobile polish and empty/loading/error states
+  - [ ] Accessibility pass (focus states, contrast, alt text, semantic markup)
+  - [ ] Consider next/image for optimized marketplace images (BugFixes #30)
+
   ---
   Resume Line When Done
 
