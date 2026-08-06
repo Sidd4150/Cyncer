@@ -1,4 +1,5 @@
 import { getAccessToken, amazonBase, amazonHeaders } from "@/app/lib/amazonHelpers";
+import prisma from "@/app/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -6,10 +7,13 @@ export async function GET() {
     if (!token) {
         return NextResponse.json({ error: "No Amazon Auth" }, { status: 401 });
     }
+
     const base = amazonBase();
     const headers = amazonHeaders(token);
     const marketPlaceId = process.env.AMAZON_MARKETPLACE_ID!;
+    const sellerId = process.env.AMAZON_SELLER_ID!;
 
+    // Sandbox only returns mock data for TEST_CASE_200; prod wants a real date
     const createdAfter = process.env.AMAZON_USE_SANDBOX === "true"
         ? "TEST_CASE_200"
         : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(); // last 30 days
@@ -18,14 +22,22 @@ export async function GET() {
     let nextToken: string | undefined = undefined;
 
     try {
-        // Page through orders with NextToken
+        // Ensure a Store row for this Amazon seller (same shopId the listings sync uses)
+        const store = await prisma.store.upsert({
+            where: { platform_shopId: { platform: "amazon", shopId: sellerId } },
+            update: {},
+            create: { platform: "amazon", shopId: sellerId, name: "Amazon" },
+        });
+
+        // 1. Page through active (unshipped) orders with NextToken
         do {
             const url = new URL(`${base}/orders/v0/orders`);
             url.searchParams.set("MarketplaceIds", marketPlaceId);
             if (nextToken) {
                 url.searchParams.set("NextToken", nextToken);
             } else {
-                url.searchParams.set("CreatedAfter", createdAfter); // first page only
+                url.searchParams.set("CreatedAfter", createdAfter);
+                url.searchParams.set("OrderStatuses", "Unshipped,PartiallyShipped");
             }
 
             const res = await fetch(url, { headers });
@@ -39,30 +51,69 @@ export async function GET() {
             nextToken = payload.NextToken;
         } while (nextToken);
 
-        // For each order, fetch its line items (the N+1)
+        // 2. For each order, fetch its line items and upsert them
+        let synced = 0;
+        const activeOrderIds: string[] = [];
+
         for (const order of orders) {
-            try {
-                const itemsRes = await fetch(
-                    `${base}/orders/v0/orders/${order.AmazonOrderId}/orderItems`,
-                    { headers }
-                );
-                const itemsData = await itemsRes.json();
-                if (!itemsRes.ok) {
-                    console.log("orderItems failed for", order.AmazonOrderId, itemsData);
-                    continue;
-                }
-                const items = (itemsData.payload?.OrderItems ?? []).map((i: any) => ({
-                    sku: i.SellerSKU,
-                    qty: i.QuantityOrdered,
-                    price: i.ItemPrice?.Amount,
-                }));
-                console.log("Amazon order", order.AmazonOrderId, order.OrderStatus, items);
-            } catch (e) {
-                console.error("orderItems error for", order.AmazonOrderId, e);
+            const itemsRes = await fetch(
+                `${base}/orders/v0/orders/${order.AmazonOrderId}/orderItems`,
+                { headers }
+            );
+            const itemsData = await itemsRes.json();
+
+            // getOrderItems is a very low-rate operation (~0.5 req/sec)
+            await new Promise((r) => setTimeout(r, 2000));
+
+            if (!itemsRes.ok) {
+                console.log("orderItems failed for", order.AmazonOrderId, itemsData);
+                continue;
+            }
+
+            for (const item of itemsData.payload?.OrderItems ?? []) {
+                const orderId = `AMZN-${order.AmazonOrderId}-${item.OrderItemId}`;
+                activeOrderIds.push(orderId);
+
+                const product = await prisma.product.findUnique({
+                    where: { SKU: `AMZN-${item.SellerSKU}` },
+                });
+                if (!product) continue;
+
+                const salePrice = parseFloat(item.ItemPrice?.Amount ?? "0");
+
+                await prisma.order.upsert({
+                    where: { orderId },
+                    update: {
+                        status: order.OrderStatus,
+                        quantity: item.QuantityOrdered,
+                        salePrice,
+                        storeId: store.id,
+                    },
+                    create: {
+                        platform: "amazon",
+                        orderId,
+                        quantity: item.QuantityOrdered,
+                        salePrice,
+                        date: new Date(order.PurchaseDate),
+                        status: order.OrderStatus,
+                        productId: product.id,
+                        storeId: store.id,
+                    },
+                });
+                synced++;
             }
         }
 
-        return NextResponse.json({ fetched: orders.length });
+        // 3. Reconcile: drop this store's orders no longer in the active feed
+        const removed = await prisma.order.deleteMany({
+            where: {
+                storeId: store.id,
+                platform: "amazon",
+                orderId: { notIn: activeOrderIds },
+            },
+        });
+
+        return NextResponse.json({ store: store.name, synced, removed: removed.count, total: orders.length });
     } catch (error) {
         console.error("Amazon orders sync failed:", error);
         return NextResponse.json({ error: "Amazon orders sync failed" }, { status: 500 });
