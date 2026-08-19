@@ -90,7 +90,6 @@ export async function GET() {
                     });
                     synced++;
                 }
-
                 offset += limit;
             }
 

@@ -1,4 +1,22 @@
+# Dependencies
 **/node_modules
+
+# Build output & Next.js cache
 **/.next
-.git
+**/out
+**/build
+
+# Environment files (don't bake secrets into images)
 **/.env
+**/.env*.local
+
+# Version control & OS junk
+.git
+.gitignore
+.DS_Store
+**/.DS_Store
+
+# Scratch & docs
+TEST_ETSYAPI
+*.md
+npm-debug.log*

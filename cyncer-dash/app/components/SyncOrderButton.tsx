@@ -1,37 +1,57 @@
 'use client'
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+
 export default function SyncOrderButton() {
     const [isSyncing, setSyncing] = useState(false)
     const [message, setMessage] = useState("")
     const router = useRouter()
-    async function handlesync(): Promise<void> {
 
+    async function handlesync(): Promise<void> {
         setSyncing(true)
+        setMessage("")
+
         try {
-            const res = await fetch("/api/etsy/sync-orders")
-            if (!res.ok) {
-                setMessage("Failed to sync orders")
+            // Run Etsy and Amazon order syncs in parallel
+            const [etsyRes, amazonRes] = await Promise.allSettled([
+                fetch("/api/etsy/sync-orders"),
+                fetch("/api/amazon/sync-orders"),
+            ])
+
+            let totalSynced = 0
+            const successfulPlatforms: string[] = []
+
+            // 1. Process Etsy results
+            if (etsyRes.status === "fulfilled" && etsyRes.value.ok) {
+                const data = await etsyRes.value.json()
+                const count = (data.stores ?? []).reduce(
+                    (sum: number, s: { synced?: number }) => sum + (s.synced ?? 0),
+                    0
+                )
+                totalSynced += count
+                successfulPlatforms.push("Etsy")
+            }
+
+            // 2. Process Amazon results
+            if (amazonRes.status === "fulfilled" && amazonRes.value.ok) {
+                const data = await amazonRes.value.json()
+                totalSynced += (data.synced ?? 0)
+                successfulPlatforms.push("Amazon")
+            }
+
+            if (successfulPlatforms.length === 0) {
+                setMessage("Failed to sync orders from connected stores.")
                 return
             }
-            const data = await res.json()
-            const total = (data.stores ?? []).reduce(
 
-
-                (sum: number, s: { synced?: number }) => sum + (s.synced ?? 0),
-                0
-            )
-            setMessage(`Synced ${total} order${total === 1 ? "" : "s"}`)
+            setMessage(`Synced ${totalSynced} order${totalSynced === 1 ? "" : "s"} (${successfulPlatforms.join(" & ")})`)
             router.refresh()
         } catch (error) {
-            console.error(error)
-            setMessage("Error syncing orders")
+            console.error("Order sync error:", error)
+            setMessage("Error syncing orders.")
         } finally {
             setSyncing(false)
         }
-
-
-
     }
 
     return (
@@ -39,7 +59,7 @@ export default function SyncOrderButton() {
             <button
                 onClick={handlesync}
                 disabled={isSyncing}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition text-sm font-medium"
             >
                 {isSyncing ? (
                     <>
@@ -50,11 +70,11 @@ export default function SyncOrderButton() {
                         <span>Syncing Orders...</span>
                     </>
                 ) : (
-                    <span>Refresh orders</span>
+                    <span>Refresh Orders</span>
                 )}
             </button>
             {message && (
-                <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded">
+                <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded border border-green-200">
                     {message}
                 </span>
             )}

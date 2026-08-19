@@ -10,19 +10,26 @@ export async function GET() {
 
     const base = amazonBase();
     const headers = amazonHeaders(token);
-    const marketPlaceId = process.env.AMAZON_MARKETPLACE_ID!;
-    const sellerId = process.env.AMAZON_SELLER_ID!;
+    const marketPlaceId = process.env.AMAZON_MARKETPLACE_ID;
+    const sellerId = process.env.AMAZON_SELLER_ID;
 
-    // Sandbox only returns mock data for TEST_CASE_200; prod wants a real date
+    if (!marketPlaceId || !sellerId) {
+        return NextResponse.json(
+            { error: "Missing AMAZON_MARKETPLACE_ID or AMAZON_SELLER_ID in .env" },
+            { status: 400 }
+        );
+    }
+
+    // Sandbox only returns mock data for TEST_CASE_200; prod queries real orders from the last 30 days
     const createdAfter = process.env.AMAZON_USE_SANDBOX === "true"
         ? "TEST_CASE_200"
-        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(); // last 30 days
+        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const orders: any[] = [];
+    const orders: Record<string, any>[] = [];
     let nextToken: string | undefined = undefined;
 
     try {
-        // Ensure a Store row for this Amazon seller (same shopId the listings sync uses)
+        // Ensure a Store row for this Amazon seller
         const store = await prisma.store.upsert({
             where: { platform_shopId: { platform: "amazon", shopId: sellerId } },
             update: {},
@@ -53,6 +60,7 @@ export async function GET() {
 
         // 2. For each order, fetch its line items and upsert them
         let synced = 0;
+        let hasErrors = false;
         const activeOrderIds: string[] = [];
 
         for (const order of orders) {
@@ -62,11 +70,12 @@ export async function GET() {
             );
             const itemsData = await itemsRes.json();
 
-            // getOrderItems is a very low-rate operation (~0.5 req/sec)
+            // getOrderItems is a low-rate operation (~0.5 req/sec)
             await new Promise((r) => setTimeout(r, 2000));
 
             if (!itemsRes.ok) {
-                console.log("orderItems failed for", order.AmazonOrderId, itemsData);
+                console.error("orderItems failed for", order.AmazonOrderId, itemsData);
+                hasErrors = true; // 🛡️ Flag that an error occurred
                 continue;
             }
 
@@ -104,16 +113,26 @@ export async function GET() {
             }
         }
 
-        // 3. Reconcile: drop this store's orders no longer in the active feed
-        const removed = await prisma.order.deleteMany({
-            where: {
-                storeId: store.id,
-                platform: "amazon",
-                orderId: { notIn: activeOrderIds },
-            },
-        });
+        // 3. Reconcile: Only drop local orders if the sync completed with 0 errors
+        let removedCount = 0;
+        if (!hasErrors && orders.length > 0) {
+            const removed = await prisma.order.deleteMany({
+                where: {
+                    storeId: store.id,
+                    platform: "amazon",
+                    orderId: { notIn: activeOrderIds },
+                },
+            });
+            removedCount = removed.count;
+        }
 
-        return NextResponse.json({ store: store.name, synced, removed: removed.count, total: orders.length });
+        return NextResponse.json({
+            store: store.name,
+            synced,
+            removed: removedCount,
+            total: orders.length,
+            hasErrors,
+        });
     } catch (error) {
         console.error("Amazon orders sync failed:", error);
         return NextResponse.json({ error: "Amazon orders sync failed" }, { status: 500 });
