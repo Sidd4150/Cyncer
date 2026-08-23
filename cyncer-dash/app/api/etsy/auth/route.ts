@@ -8,7 +8,7 @@ export async function GET() {
         .update(codeVerifier)
         .digest("base64url");
 
-    const state = Math.random().toString(36).substring(7);
+    const state = crypto.randomBytes(16).toString("base64url");
 
     const url = `https://www.etsy.com/oauth/connect?` +
         `response_type=code` +
@@ -18,11 +18,17 @@ export async function GET() {
         `&state=${state}` +
         `&code_challenge=${codeChallenge}` +
         `&code_challenge_method=S256`;
-    const response = NextResponse.redirect(url);
-    response.cookies.set("etsy_code_verifier", codeVerifier, {
-        httpOnly: true,
-        maxAge: 300,
-    });
 
+    const response = NextResponse.redirect(url);
+    const cookieOptions = {
+        httpOnly: true,
+        maxAge: 300, // 5 minutes                                                                                       
+        sameSite: "lax" as const,
+        secure: process.env.NODE_ENV === "production",
+        path: "/api/etsy",
+    };
+
+    response.cookies.set("etsy_code_verifier", codeVerifier, cookieOptions);
+    response.cookies.set("etsy_oauth_state", state, cookieOptions);
     return response;
 }

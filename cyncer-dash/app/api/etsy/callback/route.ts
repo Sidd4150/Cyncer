@@ -6,10 +6,15 @@ import { getShopForToken } from "@/app/lib/etsyHelpers";
 // so multiple Etsy stores can be connected without overwriting each other.
 export async function GET(request: NextRequest) {
     const code = request.nextUrl.searchParams.get("code");
+    const state = request.nextUrl.searchParams.get("state");
     const codeVerifier = request.cookies.get("etsy_code_verifier")?.value;
+    const savedState = request.cookies.get("etsy_oauth_state")?.value;
 
-    if (!code || !codeVerifier) {
-        return NextResponse.json({ error: "Missing code or verifier" }, { status: 400 });
+    if (!code || !codeVerifier || !state || !savedState || state !== savedState) {
+        return NextResponse.json(
+            { error: "Invalid or expired OAuth state parameter" },
+            { status: 400 }
+        );
     }
     // Exchange the code for an access token
     try {
@@ -65,6 +70,7 @@ export async function GET(request: NextRequest) {
 
         const res = NextResponse.redirect(new URL("/dashboard?connected=etsy", request.url));
         res.cookies.delete("etsy_code_verifier");
+        res.cookies.delete("etsy_oauth_state");
         return res;
     } catch (error) {
         console.error("Etsy token exchange failed:", error);
