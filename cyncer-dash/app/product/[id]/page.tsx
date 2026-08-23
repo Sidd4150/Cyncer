@@ -1,14 +1,23 @@
 import prisma from "@/app/lib/prisma"
 import Link from "next/link"
+import { notFound } from "next/navigation"
 
 export default async function ProductDetails({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
+    const productId = Number(id);
+
+    if (Number.isNaN(productId)) {
+        notFound();
+    }
+
     const product = await prisma.product.findUnique({
-        where: { id: parseInt(id) },
+        where: { id: productId },
         include: { listings: true, orders: true },
     });
 
-    if (!product) return <div className="p-8 text-gray-500">Product not found</div>;
+    if (!product) {
+        notFound();
+    }
 
     const totalStock = product.listings.reduce((sum, l) => sum + l.quantity, 0);
 
