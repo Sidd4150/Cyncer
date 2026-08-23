@@ -57,19 +57,30 @@ export async function POST() {
 
                         if (!product) continue;
 
+                        let salePrice = txn.price.amount / txn.price.divisor;
+
+                        if (receipt.transactions.length === 1 && receipt.subtotal?.amount && receipt.subtotal?.divisor) {
+                            salePrice = (receipt.subtotal.amount / receipt.subtotal.divisor) / (txn.quantity || 1);
+                        } else if (receipt.total_price?.amount && receipt.discount_amt?.amount) {
+                            const discountRatio = receipt.discount_amt.amount / receipt.total_price.amount;
+                            salePrice = (txn.price.amount / txn.price.divisor) * (1 - discountRatio);
+                        }
+
+                        salePrice = Number(salePrice.toFixed(2));
+
                         await prisma.order.upsert({
                             where: { orderId },
                             update: {
                                 status: receipt.status,
                                 quantity: txn.quantity,
-                                salePrice: txn.price.amount / txn.price.divisor,
+                                salePrice,
                                 storeId: store.id,
                             },
                             create: {
                                 platform: "etsy",
                                 orderId,
                                 quantity: txn.quantity,
-                                salePrice: txn.price.amount / txn.price.divisor,
+                                salePrice,
                                 date: new Date(receipt.create_timestamp * 1000),
                                 status: receipt.status,
                                 productId: product.id,
