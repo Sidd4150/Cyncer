@@ -5,6 +5,14 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+
+    const isProduction =
+        process.env.NODE_ENV === "production" ||
+        process.env.PRODUCTION?.toLowerCase() === "true";
+
+    if (isProduction) {
+        throw new Error("Seeding is disabled in production to prevent data loss.");
+    }
     //Clearing existing data ( order matters -delete children first)
     await prisma.order.deleteMany();
     await prisma.listing.deleteMany();
