@@ -1,8 +1,16 @@
 import { getAccessToken, amazonBase, amazonHeaders } from "@/app/lib/amazonHelpers";
 import prisma from "@/app/lib/prisma";
 import { NextResponse } from "next/server";
+import { auth } from "@/auth"
 
-export async function GET() {
+export async function POST() {
+
+    const session = await auth()
+    if (!session?.user || session.user.email?.toLowerCase().trim() !== process.env.ALLOWED_EMAIL?.toLowerCase().trim()) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+
     const token = await getAccessToken();
     if (!token) {
         return NextResponse.json({ error: "No Amazon Auth" }, { status: 401 });

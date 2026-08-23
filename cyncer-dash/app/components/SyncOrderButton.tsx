@@ -14,8 +14,8 @@ export default function SyncOrderButton() {
         try {
             // Run Etsy and Amazon order syncs in parallel
             const [etsyRes, amazonRes] = await Promise.allSettled([
-                fetch("/api/etsy/sync-orders"),
-                fetch("/api/amazon/sync-orders"),
+                fetch("/api/etsy/sync-orders", { method: "POST" }),
+                fetch("/api/amazon/sync-orders", { method: "POST" }),
             ])
 
             let totalSynced = 0

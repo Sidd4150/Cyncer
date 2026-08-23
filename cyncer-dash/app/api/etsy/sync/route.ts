@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import { auth } from "@/auth"
 import { getValidToken, ensureStore, etsyHeaders } from "@/app/lib/etsyHelpers";
 
-export async function GET() {
+export async function POST() {
+
+    const session = await auth()
+    if (!session?.user || session.user.email?.toLowerCase().trim() !== process.env.ALLOWED_EMAIL?.toLowerCase().trim()) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+
     const tokens = await prisma.platformToken.findMany({ where: { platform: "etsy" } });
 
     if (tokens.length === 0) {
