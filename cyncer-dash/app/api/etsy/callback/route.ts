@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
             { status: 400 }
         );
     }
-    // Exchange the code for an access token
+    // Exchange the code for an access token.
     try {
         const response = await fetch("https://api.etsy.com/v3/public/oauth/token", {
             method: "POST",
