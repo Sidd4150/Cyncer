@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { auth } from "@/auth"
+import { isEmailAllowed } from "@/app/lib/authHelpers";
 import { getValidToken, ensureStore, etsyHeaders } from "@/app/lib/etsyHelpers";
 
 export async function POST() {
 
     const session = await auth()
-    if (!session?.user || session.user.email?.toLowerCase().trim() !== process.env.ALLOWED_EMAIL?.toLowerCase().trim()) {
+    if (!isEmailAllowed(session?.user?.email)) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

@@ -1,6 +1,7 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import { authConfig } from "./auth.config"
+import { isEmailAllowed } from "@/app/lib/authHelpers"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     ...authConfig,
@@ -12,13 +13,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ],
     callbacks: {
         ...authConfig.callbacks,
-        // Only allow sign-in if the email matches Dad's whitelisted email
+        // Only allow sign-in if the email matches the whitelisted emails
         async signIn({ user }) {
-            const allowedEmail = process.env.ALLOWED_EMAIL?.toLowerCase().trim()
-            if (!user.email || !allowedEmail) {
-                return false
-            }
-            return user.email.toLowerCase().trim() === allowedEmail
+            return isEmailAllowed(user.email)
         },
         async session({ session, token }) {
             if (token && session.user) {
