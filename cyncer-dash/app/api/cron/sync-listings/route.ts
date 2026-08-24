@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isEmailAllowed } from "@/app/lib/authHelpers";
 import { POST as syncEtsyListings } from "@/app/api/etsy/sync/route";
-import { POST as syncEtsyOrders } from "@/app/api/etsy/sync-orders/route";
 import { POST as syncAmazonListings } from "@/app/api/amazon/sync/route";
-import { POST as syncAmazonOrders } from "@/app/api/amazon/sync-orders/route";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -22,12 +20,9 @@ export async function GET(req: NextRequest) {
 
     const startTime = Date.now();
 
-    // Trigger existing sync endpoints
-    const [etsyListings, etsyOrders, amazonListings, amazonOrders] = await Promise.allSettled([
+    const [etsyListings, amazonListings] = await Promise.allSettled([
         syncEtsyListings(req),
-        syncEtsyOrders(req),
         syncAmazonListings(req),
-        syncAmazonOrders(req),
     ]);
 
     const parseResult = async (result: PromiseSettledResult<Response>) => {
@@ -40,13 +35,12 @@ export async function GET(req: NextRequest) {
     };
 
     const summary = {
+        type: "listings_sync",
         timestamp: new Date().toISOString(),
         durationMs: Date.now() - startTime,
         results: {
             etsyListings: await parseResult(etsyListings),
-            etsyOrders: await parseResult(etsyOrders),
             amazonListings: await parseResult(amazonListings),
-            amazonOrders: await parseResult(amazonOrders),
         },
     };
 
