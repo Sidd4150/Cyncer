@@ -20,42 +20,192 @@ export default async function Orders({
         prisma.store.findMany({ orderBy: { name: "asc" } }),
     ]);
 
+    const etsyStores = stores.filter((s) => s.platform === "etsy");
+    const amazonStores = stores.filter((s) => s.platform === "amazon");
+    const ebayStores = stores.filter((s) => s.platform === "ebay");
+
+    const selectedStore = stores.find((s) => s.id === storeId);
+
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
-            <h1 className="text-3xl font-bold mb-2">Active Orders</h1>
-            <p className="text-gray-500 mb-4">{orders.length} orders</p>
-            <SyncOrderButton></SyncOrderButton>
+        <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1">Active Orders</h1>
+            <p className="text-gray-500 text-sm mb-4">{orders.length} orders</p>
+            <SyncOrderButton />
 
-            {stores.length > 0 && (
-                <div className="flex gap-2 mt-4 mb-2 flex-wrap">
-                    <Link href="/orders" className={`px-3 py-1.5 rounded text-sm font-medium ${!storeId ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
-                        All Stores
-                    </Link>
-                    {stores.map((s) => (
-                        <Link key={s.id} href={`/orders?store=${s.id}`} className={`px-3 py-1.5 rounded text-sm font-medium ${storeId === s.id ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
-                            {s.name}
-                        </Link>
-                    ))}
-                </div>
-            )}
-
-            <div className="flex gap-2 mt-4 mb-6">
-
-                <Link href="/orders" className={`px-3 py-1.5 rounded text-sm font-medium ${!platformFilter ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
+            {/* Consolidated Platform & Store Dropdown Filter Bar */}
+            <div className="flex gap-2 mt-4 mb-6 flex-wrap items-center">
+                {/* All Orders Button */}
+                <Link
+                    href="/orders"
+                    className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition shadow-sm ${
+                        !platformFilter && !storeId
+                            ? "bg-blue-600 text-white"
+                            : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    }`}
+                >
                     All
                 </Link>
-                <Link href="/orders?platform=etsy" className={`px-3 py-1.5 rounded text-sm font-medium ${platformFilter === "etsy" ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
-                    Etsy
-                </Link>
-                <Link href="/orders?platform=amazon" className={`px-3 py-1.5 rounded text-sm font-medium ${platformFilter === "amazon" ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
-                    Amazon
-                </Link>
-                <Link href="/orders?platform=ebay" className={`px-3 py-1.5 rounded text-sm font-medium ${platformFilter === "ebay" ? "bg-blue-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
+
+                {/* Etsy Dropdown */}
+                <div className="relative group inline-block">
+                    <div className="flex items-stretch shadow-sm rounded-lg overflow-hidden border border-gray-300">
+                        <Link
+                            href="/orders?platform=etsy"
+                            className={`px-3 py-1.5 text-xs sm:text-sm font-medium transition flex items-center gap-1.5 ${
+                                platformFilter === "etsy"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-white text-gray-700 hover:bg-gray-50"
+                            }`}
+                        >
+                            <span>Etsy</span>
+                            {platformFilter === "etsy" && selectedStore && (
+                                <span className="text-[10px] bg-blue-700 text-white px-1.5 py-0.5 rounded-md font-normal">
+                                    {selectedStore.name}
+                                </span>
+                            )}
+                        </Link>
+                        {etsyStores.length > 0 && (
+                            <button
+                                type="button"
+                                className={`px-2 py-1.5 border-l text-xs transition flex items-center justify-center ${
+                                    platformFilter === "etsy"
+                                        ? "bg-blue-600 text-white border-blue-500 hover:bg-blue-700"
+                                        : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+                                }`}
+                            >
+                                <svg
+                                    className="w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-180"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Unbreakable Hover Bridge Container */}
+                    {etsyStores.length > 0 && (
+                        <div className="absolute left-0 top-full pt-1.5 w-52 z-30 hidden group-hover:block group-focus-within:block">
+                            <div className="bg-white border border-gray-200 rounded-xl shadow-xl p-1.5 ring-1 ring-black/5">
+                                <Link
+                                    href="/orders?platform=etsy"
+                                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${
+                                        platformFilter === "etsy" && !storeId
+                                            ? "bg-blue-50 text-blue-700 font-semibold"
+                                            : "text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    <span>All Etsy Stores</span>
+                                    <span className="text-[10px] text-gray-400">All</span>
+                                </Link>
+                                <div className="my-1 border-t border-gray-100" />
+                                {etsyStores.map((s) => (
+                                    <Link
+                                        key={s.id}
+                                        href={`/orders?platform=etsy&store=${s.id}`}
+                                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${
+                                            storeId === s.id
+                                                ? "bg-blue-50 text-blue-700 font-semibold"
+                                                : "text-gray-700 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        <span>{s.name}</span>
+                                        <span className="text-[10px] text-gray-400">Shop</span>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Amazon Dropdown */}
+                <div className="relative group inline-block">
+                    <div className="flex items-stretch shadow-sm rounded-lg overflow-hidden border border-gray-300">
+                        <Link
+                            href="/orders?platform=amazon"
+                            className={`px-3 py-1.5 text-xs sm:text-sm font-medium transition flex items-center gap-1.5 ${
+                                platformFilter === "amazon"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-white text-gray-700 hover:bg-gray-50"
+                            }`}
+                        >
+                            <span>Amazon</span>
+                            {platformFilter === "amazon" && selectedStore && (
+                                <span className="text-[10px] bg-blue-700 text-white px-1.5 py-0.5 rounded-md font-normal">
+                                    {selectedStore.name}
+                                </span>
+                            )}
+                        </Link>
+                        {amazonStores.length > 0 && (
+                            <button
+                                type="button"
+                                className={`px-2 py-1.5 border-l text-xs transition flex items-center justify-center ${
+                                    platformFilter === "amazon"
+                                        ? "bg-blue-600 text-white border-blue-500 hover:bg-blue-700"
+                                        : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+                                }`}
+                            >
+                                <svg
+                                    className="w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-180"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Unbreakable Hover Bridge Container */}
+                    {amazonStores.length > 0 && (
+                        <div className="absolute left-0 top-full pt-1.5 w-52 z-30 hidden group-hover:block group-focus-within:block">
+                            <div className="bg-white border border-gray-200 rounded-xl shadow-xl p-1.5 ring-1 ring-black/5">
+                                <Link
+                                    href="/orders?platform=amazon"
+                                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${
+                                        platformFilter === "amazon" && !storeId
+                                            ? "bg-blue-50 text-blue-700 font-semibold"
+                                            : "text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    <span>All Amazon Stores</span>
+                                    <span className="text-[10px] text-gray-400">All</span>
+                                </Link>
+                                <div className="my-1 border-t border-gray-100" />
+                                {amazonStores.map((s) => (
+                                    <Link
+                                        key={s.id}
+                                        href={`/orders?platform=amazon&store=${s.id}`}
+                                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${
+                                            storeId === s.id
+                                                ? "bg-blue-50 text-blue-700 font-semibold"
+                                                : "text-gray-700 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        <span>{s.name}</span>
+                                        <span className="text-[10px] text-gray-400">Shop</span>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* eBay Tab */}
+                <Link
+                    href="/orders?platform=ebay"
+                    className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition shadow-sm ${
+                        platformFilter === "ebay"
+                            ? "bg-blue-600 text-white"
+                            : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    }`}
+                >
                     eBay
                 </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {orders.map((order) => (
                     <Link href={`/product/${order.productId}`} key={order.id}>
                         <div className="bg-white rounded-lg shadow hover:shadow-md transition p-4">

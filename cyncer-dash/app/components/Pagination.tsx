@@ -3,6 +3,7 @@ import Link from "next/link"
 export default function Pagination({
     currentPage,
     totalPages,
+    platform,
     store,
     amazon,
     stock,
@@ -10,6 +11,7 @@ export default function Pagination({
 }: {
     currentPage: number
     totalPages: number
+    platform?: string
     store?: string
     amazon?: string
     stock?: string
@@ -18,6 +20,7 @@ export default function Pagination({
     const href = (page: number) => {
         const params = new URLSearchParams()
         params.set("page", String(page))
+        if (platform) params.set("platform", platform)
         if (store) params.set("store", store)
         if (amazon) params.set("amazon", amazon)
         if (stock) params.set("stock", stock)

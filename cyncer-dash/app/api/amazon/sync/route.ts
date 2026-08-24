@@ -4,11 +4,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth"
 import { isEmailAllowed } from "@/app/lib/authHelpers";
 
-export async function POST() {
-
-    const session = await auth()
-    if (!isEmailAllowed(session?.user?.email)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+export async function POST(req?: Request) {
+    const isCron = Boolean(process.env.CRON_SECRET && req?.headers?.get("authorization") === `Bearer ${process.env.CRON_SECRET}`);
+    if (!isCron) {
+        const session = await auth()
+        if (!isEmailAllowed(session?.user?.email)) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        }
     }
 
     const token = await getAccessToken();

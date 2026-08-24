@@ -9,9 +9,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Query connected store counts
   const [etsyCount, amazonCount] = session?.user
     ? await Promise.all([
-      prisma.store.count({ where: { platform: "etsy" } }),
-      prisma.store.count({ where: { platform: "amazon" } }),
-    ])
+        prisma.store.count({ where: { platform: "etsy" } }),
+        prisma.store.count({ where: { platform: "amazon" } }),
+      ])
     : [0, 0]
 
   const isAmazonConnected =
@@ -21,18 +21,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body>
-        <nav className="bg-white shadow px-8 py-4 flex items-center gap-6">
-          <Link href="/dashboard" className="font-semibold hover:text-blue-600">
-            Dashboard
-          </Link>
-          <Link href="/product" className="font-semibold hover:text-blue-600">
-            Products
-          </Link>
-          <Link href="/orders" className="font-semibold hover:text-blue-600">
-            Orders
-          </Link>
+        <nav className="bg-white shadow px-4 sm:px-8 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <Link href="/dashboard" className="font-semibold text-sm sm:text-base hover:text-blue-600">
+              Dashboard
+            </Link>
+            <Link href="/product" className="font-semibold text-sm sm:text-base hover:text-blue-600">
+              Products
+            </Link>
+            <Link href="/orders" className="font-semibold text-sm sm:text-base hover:text-blue-600">
+              Orders
+            </Link>
+          </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {etsyCount > 0 || isAmazonConnected ? (
               <div className="flex items-center gap-2 px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded text-xs font-medium">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
@@ -69,15 +71,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </a>
 
             {session?.user ? (
-              <div className="flex items-center gap-3 pl-2 border-l border-gray-200">
+              <div className="flex items-center gap-2 pl-2 border-l border-gray-200">
                 {session.user.image ? (
                   <img
                     src={session.user.image}
                     alt={session.user.name || "User"}
-                    className="w-7 h-7 rounded-full border border-gray-200"
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-gray-200"
                   />
                 ) : (
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-xs sm:text-sm font-medium text-gray-700 max-w-[100px] truncate">
                     {session.user.name || session.user.email}
                   </span>
                 )}
@@ -89,7 +91,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 >
                   <button
                     type="submit"
-                    className="text-xs text-gray-500 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-gray-50 transition"
+                    className="text-xs text-gray-500 hover:text-red-600 font-medium px-1.5 py-1 rounded hover:bg-gray-50 transition"
                   >
                     Sign out
                   </button>
@@ -98,7 +100,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             ) : (
               <Link
                 href="/login"
-                className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded font-medium hover:bg-blue-700 transition"
+                className="text-xs sm:text-sm bg-blue-600 text-white px-3 py-1.5 rounded font-medium hover:bg-blue-700 transition"
               >
                 Sign In
               </Link>

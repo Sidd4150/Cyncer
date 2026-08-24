@@ -4,11 +4,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth"
 import { isEmailAllowed } from "@/app/lib/authHelpers";
 
-export async function POST() {
-
-    const session = await auth()
-    if (!isEmailAllowed(session?.user?.email)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+export async function POST(req?: Request) {
+    const isCron = Boolean(process.env.CRON_SECRET && req?.headers?.get("authorization") === `Bearer ${process.env.CRON_SECRET}`);
+    if (!isCron) {
+        const session = await auth()
+        if (!isEmailAllowed(session?.user?.email)) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        }
     }
 
 
@@ -135,9 +137,9 @@ export async function POST() {
             }
         }
 
-        // 3. Reconcile: Only drop local orders if the sync completed with 0 errors
+        // 3. Reconcile: Drop local active orders that are no longer in Amazon's unshipped feed
         let removedCount = 0;
-        if (!hasErrors && orders.length > 0) {
+        if (!hasErrors) {
             const removed = await prisma.order.deleteMany({
                 where: {
                     storeId: store.id,

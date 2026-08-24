@@ -16,13 +16,13 @@ export default async function Dashboard() {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
-            <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Dashboard</h1>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {stats.map((stat) => (
-                    <div key={stat.label} className="bg-white rounded-lg shadow p-6">
-                        <p className="text-sm text-gray-500">{stat.label}</p>
-                        <p className="text-3xl font-bold mt-1">{stat.value}</p>
+                    <div key={stat.label} className="bg-white rounded-lg shadow p-4 sm:p-6">
+                        <p className="text-xs sm:text-sm text-gray-500">{stat.label}</p>
+                        <p className="text-2xl sm:text-3xl font-bold mt-1">{stat.value}</p>
                     </div>
                 ))}
             </div>

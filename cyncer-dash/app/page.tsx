@@ -43,58 +43,58 @@ const steps = [
 export default function Home() {
     return (
         <div className="min-h-screen bg-gray-100">
-            <section className="max-w-4xl mx-auto px-8 py-16 text-center">
-                <h1 className="text-4xl font-bold mb-4">Cyncer</h1>
-                <p className="text-xl text-gray-700 mb-3">
+            <section className="max-w-4xl mx-auto px-4 sm:px-8 py-10 sm:py-16 text-center">
+                <h1 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4">Cyncer</h1>
+                <p className="text-lg sm:text-xl text-gray-700 mb-3">
                     Multi-channel inventory management for online sellers.
                 </p>
-                <p className="text-gray-600 max-w-2xl mx-auto mb-8">
+                <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto mb-6 sm:mb-8">
                     Cyncer keeps your stock and orders in sync across Etsy, eBay, and Amazon
                     from a single dashboard. When an item sells on one marketplace, its
                     quantity stays accurate everywhere — so you spend less time reconciling
                     spreadsheets and avoid overselling products you no longer have.
                 </p>
-                <div className="flex gap-4 justify-center flex-wrap">
-                    <Link href="/dashboard" className="px-5 py-2.5 bg-blue-600 text-white rounded font-medium hover:bg-blue-700">
+                <div className="flex gap-3 sm:gap-4 justify-center flex-wrap">
+                    <Link href="/dashboard" className="px-4 sm:px-5 py-2 sm:py-2.5 bg-blue-600 text-white rounded font-medium text-sm sm:text-base hover:bg-blue-700 transition">
                         Open Dashboard
                     </Link>
-                    <Link href="/product" className="px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded font-medium hover:bg-gray-50">
+                    <Link href="/product" className="px-4 sm:px-5 py-2 sm:py-2.5 bg-white text-gray-700 border border-gray-300 rounded font-medium text-sm sm:text-base hover:bg-gray-50 transition">
                         Browse Products
                     </Link>
                 </div>
             </section>
 
-            <section className="max-w-5xl mx-auto px-8 pb-16">
-                <h2 className="text-2xl font-bold mb-6 text-center">What Cyncer does</h2>
+            <section className="max-w-5xl mx-auto px-4 sm:px-8 pb-10 sm:pb-16">
+                <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">What Cyncer does</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {features.map((f) => (
-                        <div key={f.title} className="bg-white rounded-lg shadow p-6">
-                            <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
-                            <p className="text-gray-600 text-sm">{f.body}</p>
+                        <div key={f.title} className="bg-white rounded-lg shadow p-4 sm:p-6">
+                            <h3 className="font-semibold text-base sm:text-lg mb-2">{f.title}</h3>
+                            <p className="text-gray-600 text-xs sm:text-sm">{f.body}</p>
                         </div>
                     ))}
                 </div>
             </section>
 
-            <section className="max-w-5xl mx-auto px-8 pb-16">
-                <h2 className="text-2xl font-bold mb-6 text-center">How it works</h2>
+            <section className="max-w-5xl mx-auto px-4 sm:px-8 pb-10 sm:pb-16">
+                <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">How it works</h2>
                 <ol className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {steps.map((s, i) => (
-                        <li key={s.title} className="bg-white rounded-lg shadow p-6">
-                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-semibold mb-3">
+                        <li key={s.title} className="bg-white rounded-lg shadow p-4 sm:p-6">
+                            <span className="inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-800 font-semibold mb-2 sm:mb-3 text-xs sm:text-sm">
                                 {i + 1}
                             </span>
-                            <h3 className="font-semibold text-lg mb-2">{s.title}</h3>
-                            <p className="text-gray-600 text-sm">{s.body}</p>
+                            <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">{s.title}</h3>
+                            <p className="text-gray-600 text-xs sm:text-sm">{s.body}</p>
                         </li>
                     ))}
                 </ol>
             </section>
 
-            <section className="max-w-4xl mx-auto px-8 pb-16 text-center">
-                <div className="bg-white rounded-lg shadow p-8">
-                    <h2 className="text-2xl font-bold mb-2">Supported marketplaces</h2>
-                    <p className="text-gray-600 max-w-2xl mx-auto">
+            <section className="max-w-4xl mx-auto px-4 sm:px-8 pb-10 sm:pb-16 text-center">
+                <div className="bg-white rounded-lg shadow p-6 sm:p-8">
+                    <h2 className="text-xl sm:text-2xl font-bold mb-2">Supported marketplaces</h2>
+                    <p className="text-gray-600 text-xs sm:text-sm max-w-2xl mx-auto">
                         Etsy is fully supported today, including multiple Etsy shops. eBay and
                         Amazon integrations are actively being built and will use the same
                         unified catalog and order tracking.
