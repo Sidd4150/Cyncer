@@ -124,7 +124,7 @@ export async function POST() {
                         orderId,
                         quantity: item.QuantityOrdered,
                         salePrice,
-                        date: new Date(order.PurchaseDate),
+                        date: order.PurchaseDate ? new Date(order.PurchaseDate) : new Date(),
                         status: order.OrderStatus,
                         productId: product.id,
                         storeId: store.id,

@@ -5,17 +5,20 @@ export default function Pagination({
     totalPages,
     store,
     amazon,
+    stock,
 }: {
     currentPage: number
     totalPages: number
     store?: string
     amazon?: string
+    stock?: string
 }) {
     const href = (page: number) => {
         const params = new URLSearchParams()
         params.set("page", String(page))
         if (store) params.set("store", store)
         if (amazon) params.set("amazon", amazon)
+        if (stock) params.set("stock", stock)
         return `/product?${params.toString()}`
     }
 

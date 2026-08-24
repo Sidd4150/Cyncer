@@ -64,7 +64,7 @@ export async function POST() {
                         const imgData = imgRes.ok ? await imgRes.json() : { results: [] };
                         images = (imgData.results ?? [])
                             .map((img: { url_570xN?: string }) => img.url_570xN)
-                            .filter((url): url is string => Boolean(url));
+                            .filter((url: string | undefined): url is string => Boolean(url));
                         await new Promise((r) => setTimeout(r, 250));
                     }
 

@@ -9,16 +9,25 @@ export default async function Product({
 }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-    const { page, store, amazon } = await searchParams;
+    const { page, store, amazon, stock } = await searchParams;
     const currentPage = Math.max(1, parseInt(page as string) || 1);
     const skip = (currentPage - 1) * PAGE_SIZE;
 
     const storeId = store ? Number(store) : undefined;
     const amazonStatus = amazon === "active" || amazon === "inactive" ? amazon : undefined;
+    const stockFilter = typeof stock === "string" ? stock : undefined;
 
-    const listingFilters = [];
+    const listingFilters: Record<string, unknown>[] = [];
     if (storeId) listingFilters.push({ storeId });
     if (amazonStatus) listingFilters.push({ platform: "amazon", status: amazonStatus });
+    if (stockFilter === "low") {
+        listingFilters.push({ quantity: { gt: 0, lte: 3 } });
+    } else if (stockFilter === "out") {
+        listingFilters.push({ quantity: { lte: 0 } });
+    } else if (stockFilter === "in") {
+        listingFilters.push({ quantity: { gt: 0 } });
+    }
+
     const where = listingFilters.length
         ? { AND: listingFilters.map((f) => ({ listings: { some: f } })) }
         : {};
@@ -40,10 +49,11 @@ export default async function Product({
     const selectedStore = stores.find((s) => s.id === storeId);
     const isAmazonSelected = selectedStore?.platform === "amazon";
 
-    const buildHref = (params: { store?: number; amazon?: string }) => {
+    const buildHref = (params: { store?: number; amazon?: string; stock?: string }) => {
         const sp = new URLSearchParams();
         if (params.store) sp.set("store", String(params.store));
         if (params.amazon) sp.set("amazon", params.amazon);
+        if (params.stock) sp.set("stock", params.stock);
         const qs = sp.toString();
         return qs ? `/product?${qs}` : "/product";
     };
@@ -52,6 +62,13 @@ export default async function Product({
         { label: "All", value: undefined },
         { label: "Active", value: "active" },
         { label: "Inactive", value: "inactive" },
+    ];
+
+    const stockFilters: { label: string; value?: string }[] = [
+        { label: "All Stock", value: undefined },
+        { label: "In Stock (> 0)", value: "in" },
+        { label: "Low Stock (≤ 3)", value: "low" },
+        { label: "Out of Stock (0)", value: "out" },
     ];
 
     return (
@@ -73,7 +90,7 @@ export default async function Product({
             )}
 
             {isAmazonSelected && (
-                <div className="flex gap-2 mb-6 flex-wrap">
+                <div className="flex gap-2 mb-3 flex-wrap">
                     {amazonFilters.map((f) => (
                         <Link key={f.label} href={buildHref({ store: storeId, amazon: f.value })} className={`px-3 py-1.5 rounded text-sm font-medium ${amazonStatus === f.value ? "bg-orange-500 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"}`}>
                             {f.label}
@@ -82,8 +99,27 @@ export default async function Product({
                 </div>
             )}
 
+            <div className="flex gap-2 mb-6 flex-wrap">
+                {stockFilters.map((f) => {
+                    const isSelected = stockFilter === f.value;
+                    return (
+                        <Link
+                            key={f.label}
+                            href={buildHref({ store: storeId, amazon: amazonStatus, stock: f.value })}
+                            className={`px-3 py-1.5 rounded text-sm font-medium transition ${
+                                isSelected
+                                    ? "bg-gray-800 text-white"
+                                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                            }`}
+                        >
+                            {f.label}
+                        </Link>
+                    );
+                })}
+            </div>
+
             <div className="mb-6">
-                <Pagination currentPage={currentPage} totalPages={totalPages} store={store as string | undefined} amazon={amazonStatus} />
+                <Pagination currentPage={currentPage} totalPages={totalPages} store={store as string | undefined} amazon={amazonStatus} stock={stockFilter} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -114,7 +150,7 @@ export default async function Product({
             </div>
 
             <div className="mt-8">
-                <Pagination currentPage={currentPage} totalPages={totalPages} store={store as string | undefined} amazon={amazonStatus} />
+                <Pagination currentPage={currentPage} totalPages={totalPages} store={store as string | undefined} amazon={amazonStatus} stock={stockFilter} />
             </div>
         </div>
     )

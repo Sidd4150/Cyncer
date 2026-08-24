@@ -21,7 +21,7 @@ export async function POST() {
     const marketPlaceId = process.env.AMAZON_MARKETPLACE_ID!;
 
     interface AmazonListingItem {
-        sku?: string;
+        sku: string;
         summaries?: Array<{
             itemName?: string;
             status?: string[];
