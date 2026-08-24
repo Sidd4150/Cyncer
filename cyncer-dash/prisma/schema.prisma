@@ -51,6 +51,7 @@ model Listing {
   product    Product @relation(fields: [productId], references: [id])
   storeId    Int?
   store      Store?  @relation(fields: [storeId], references: [id])
+  @@unique([platform, platformId, storeId])
 }
 
 // Order Model
