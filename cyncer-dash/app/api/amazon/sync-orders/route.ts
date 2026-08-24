@@ -33,7 +33,20 @@ export async function POST() {
         ? "TEST_CASE_200"
         : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const orders: Record<string, any>[] = [];
+    interface AmazonOrder {
+        AmazonOrderId: string;
+        OrderStatus: string;
+        PurchaseDate?: string;
+    }
+
+    interface AmazonOrderItem {
+        OrderItemId: string;
+        SellerSKU?: string;
+        QuantityOrdered: number;
+        ItemPrice?: { Amount?: string };
+    }
+
+    const orders: AmazonOrder[] = [];
     let nextToken: string | undefined = undefined;
 
     try {
@@ -87,7 +100,7 @@ export async function POST() {
                 continue;
             }
 
-            for (const item of itemsData.payload?.OrderItems ?? []) {
+            for (const item of (itemsData.payload?.OrderItems ?? []) as AmazonOrderItem[]) {
                 const orderId = `AMZN-${order.AmazonOrderId}-${item.OrderItemId}`;
                 activeOrderIds.push(orderId);
 

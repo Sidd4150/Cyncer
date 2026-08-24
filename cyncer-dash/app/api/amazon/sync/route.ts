@@ -20,7 +20,23 @@ export async function POST() {
     const sellerId = process.env.AMAZON_SELLER_ID!;
     const marketPlaceId = process.env.AMAZON_MARKETPLACE_ID!;
 
-    const items: any[] = [];
+    interface AmazonListingItem {
+        sku?: string;
+        summaries?: Array<{
+            itemName?: string;
+            status?: string[];
+            mainImage?: { link?: string };
+            asin?: string;
+        }>;
+        offers?: Array<{
+            price?: { amount?: string };
+        }>;
+        fulfillmentAvailability?: Array<{
+            quantity?: number;
+        }>;
+    }
+
+    const items: AmazonListingItem[] = [];
     let pageToken: string | undefined = undefined;
 
     try {

@@ -62,7 +62,9 @@ export async function POST() {
                             { headers: etsyHeaders() }
                         );
                         const imgData = imgRes.ok ? await imgRes.json() : { results: [] };
-                        images = imgData.results?.map((img: any) => img.url_570xN) || [];
+                        images = (imgData.results ?? [])
+                            .map((img: { url_570xN?: string }) => img.url_570xN)
+                            .filter((url): url is string => Boolean(url));
                         await new Promise((r) => setTimeout(r, 250));
                     }
 
