@@ -1,6 +1,7 @@
 import prisma from "@/app/lib/prisma"
 import Link from "next/link"
 import Pagination from "@/app/components/Pagination"
+import SyncListingButton from "@/app/components/SyncListingButton"
 
 const PAGE_SIZE = 24;
 
@@ -75,8 +76,13 @@ export default async function Product({
 
     return (
         <div className="min-h-screen bg-gray-100 p-8">
-            <h1 className="text-3xl font-bold mb-2">Products</h1>
-            <p className="text-gray-500 mb-4">{totalCount} products | Page {currentPage} of {totalPages}</p>
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold mb-1">Products</h1>
+                    <p className="text-gray-500">{totalCount} products | Page {currentPage} of {totalPages}</p>
+                </div>
+                <SyncListingButton />
+            </div>
 
             {stores.length > 0 && (
                 <div className="flex gap-2 mb-3 flex-wrap">

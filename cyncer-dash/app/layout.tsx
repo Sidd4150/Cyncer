@@ -1,9 +1,22 @@
 import "./globals.css"
 import Link from "next/link"
 import { auth, signOut } from "@/auth"
+import prisma from "@/app/lib/prisma"
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
+
+  // Query connected store counts
+  const [etsyCount, amazonCount] = session?.user
+    ? await Promise.all([
+        prisma.store.count({ where: { platform: "etsy" } }),
+        prisma.store.count({ where: { platform: "amazon" } }),
+      ])
+    : [0, 0]
+
+  const isAmazonConnected =
+    amazonCount > 0 ||
+    Boolean(process.env.AMAZON_LWA_REFRESH_TOKEN && process.env.AMAZON_SELLER_ID)
 
   return (
     <html lang="en">
@@ -19,14 +32,43 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             Orders
           </Link>
 
-          <div className="ml-auto flex items-center gap-4">
-            <a
-              href="/api/etsy/auth"
-              className="flex items-center gap-2 border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50 text-sm font-medium text-gray-700"
-            >
-              Connect
-              <img src="/etsy/Etsy_Logo_0.svg" alt="Etsy" className="h-4" />
-            </a>
+          <div className="ml-auto flex items-center gap-3">
+            {/* Etsy Connected Badge */}
+            {etsyCount > 0 ? (
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded text-xs font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
+                  <span>Etsy ({etsyCount})</span>
+                </div>
+                <a
+                  href="/api/etsy/auth"
+                  title="Connect another Etsy shop"
+                  className="flex items-center gap-1 px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 text-xs font-medium text-gray-700 transition"
+                >
+                  <span className="font-bold text-gray-500 leading-none">+</span>
+                  <img src="/etsy/Etsy_Logo_0.svg" alt="Etsy" className="h-3.5" />
+                </a>
+              </div>
+            ) : (
+              <a
+                href="/api/etsy/auth"
+                className="flex items-center gap-1.5 border border-gray-300 rounded px-2.5 py-1 hover:bg-gray-50 text-xs font-medium text-gray-700"
+              >
+                <span>Connect</span>
+                <img src="/etsy/Etsy_Logo_0.svg" alt="Etsy" className="h-3.5" />
+              </a>
+            )}
+
+            {/* Amazon Connected Badge */}
+            {isAmazonConnected && (
+              <div
+                title="Amazon Connected"
+                className="flex items-center gap-1.5 px-2 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 transition"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
+                <img src="/amazon/amazon_logo.svg" alt="Amazon" className="h-3.5 w-auto" />
+              </div>
+            )}
 
             {session?.user ? (
               <div className="flex items-center gap-3 pl-2 border-l border-gray-200">
