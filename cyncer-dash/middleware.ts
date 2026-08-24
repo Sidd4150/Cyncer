@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-export function proxy(req: NextRequest) {
+export default function middleware(req: NextRequest) {
     // Check for Auth.js / NextAuth session cookies (supports both local HTTP and production HTTPS __Secure- cookies)
     const sessionCookie =
         req.cookies.get("__Secure-authjs.session-token")?.value ||
