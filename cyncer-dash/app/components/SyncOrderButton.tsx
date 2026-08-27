@@ -12,10 +12,11 @@ export default function SyncOrderButton() {
         setMessage("")
 
         try {
-            // Run Etsy and Amazon order syncs in parallel
-            const [etsyRes, amazonRes] = await Promise.allSettled([
+            // Run connected marketplace order syncs in parallel
+            const [etsyRes, amazonRes, faireRes] = await Promise.allSettled([
                 fetch("/api/etsy/sync-orders", { method: "POST" }),
                 fetch("/api/amazon/sync-orders", { method: "POST" }),
+                fetch("/api/faire/sync-orders", { method: "POST" }),
             ])
 
             let totalSynced = 0
@@ -37,6 +38,13 @@ export default function SyncOrderButton() {
                 const data = await amazonRes.value.json()
                 totalSynced += (data.synced ?? 0)
                 successfulPlatforms.push("Amazon")
+            }
+
+            // 3. Process Faire results
+            if (faireRes.status === "fulfilled" && faireRes.value.ok) {
+                const data = await faireRes.value.json()
+                totalSynced += (data.synced ?? 0)
+                successfulPlatforms.push("Faire")
             }
 
             if (successfulPlatforms.length === 0) {

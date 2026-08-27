@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { isEmailAllowed } from "@/app/lib/authHelpers";
 import { POST as syncEtsyOrders } from "@/app/api/etsy/sync-orders/route";
 import { POST as syncAmazonOrders } from "@/app/api/amazon/sync-orders/route";
+import { POST as syncFaireOrders } from "@/app/api/faire/sync-orders/route";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -20,9 +21,10 @@ export async function GET(req: NextRequest) {
 
     const startTime = Date.now();
 
-    const [etsyOrders, amazonOrders] = await Promise.allSettled([
+    const [etsyOrders, amazonOrders, faireOrders] = await Promise.allSettled([
         syncEtsyOrders(req),
         syncAmazonOrders(req),
+        syncFaireOrders(req),
     ]);
 
     const parseResult = async (result: PromiseSettledResult<Response>) => {
@@ -41,6 +43,7 @@ export async function GET(req: NextRequest) {
         results: {
             etsyOrders: await parseResult(etsyOrders),
             amazonOrders: await parseResult(amazonOrders),
+            faireOrders: await parseResult(faireOrders),
         },
     };
 

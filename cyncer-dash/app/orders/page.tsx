@@ -22,7 +22,7 @@ export default async function Orders({
 
     const etsyStores = stores.filter((s) => s.platform === "etsy");
     const amazonStores = stores.filter((s) => s.platform === "amazon");
-    const ebayStores = stores.filter((s) => s.platform === "ebay");
+    const faireStores = stores.filter((s) => s.platform === "faire");
 
     const selectedStore = stores.find((s) => s.id === storeId);
 
@@ -192,17 +192,46 @@ export default async function Orders({
                     )}
                 </div>
 
-                {/* eBay Tab */}
-                <Link
-                    href="/orders?platform=ebay"
-                    className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition shadow-sm ${
-                        platformFilter === "ebay"
-                            ? "bg-blue-600 text-white"
-                            : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                    }`}
-                >
-                    eBay
-                </Link>
+                {/* Faire Dropdown */}
+                <div className="relative group inline-block">
+                    <div className="flex items-stretch shadow-sm rounded-lg overflow-hidden border border-gray-300">
+                        <Link
+                            href="/orders?platform=faire"
+                            className={`px-3 py-1.5 text-xs sm:text-sm font-medium transition flex items-center gap-1.5 ${
+                                platformFilter === "faire"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-white text-gray-700 hover:bg-gray-50"
+                            }`}
+                        >
+                            <span>Faire</span>
+                            {platformFilter === "faire" && selectedStore && (
+                                <span className="text-[10px] bg-blue-700 text-white px-1.5 py-0.5 rounded-md font-normal">
+                                    {selectedStore.name}
+                                </span>
+                            )}
+                        </Link>
+                        {faireStores.length > 0 && (
+                            <button type="button" className="px-2 py-1.5 border-l text-xs bg-white text-gray-500 border-gray-200">
+                                <span aria-hidden="true">⌄</span>
+                            </button>
+                        )}
+                    </div>
+                    {faireStores.length > 0 && (
+                        <div className="absolute left-0 top-full pt-1.5 w-52 z-30 hidden group-hover:block group-focus-within:block">
+                            <div className="bg-white border border-gray-200 rounded-xl shadow-xl p-1.5 ring-1 ring-black/5">
+                                <Link href="/orders?platform=faire" className="flex items-center justify-between px-3 py-2 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    <span>All Faire Stores</span><span className="text-[10px] text-gray-400">All</span>
+                                </Link>
+                                <div className="my-1 border-t border-gray-100" />
+                                {faireStores.map((s) => (
+                                    <Link key={s.id} href={`/orders?platform=faire&store=${s.id}`} className="flex items-center justify-between px-3 py-2 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        <span>{s.name}</span><span className="text-[10px] text-gray-400">Store</span>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
