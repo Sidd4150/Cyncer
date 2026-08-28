@@ -5,7 +5,7 @@ import { POST as syncEtsyListings } from "@/app/api/etsy/sync/route";
 import { POST as syncAmazonListings } from "@/app/api/amazon/sync/route";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function GET(req: NextRequest) {
     const authHeader = req.headers.get("authorization");
