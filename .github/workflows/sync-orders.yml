@@ -2,8 +2,8 @@ name: Sync Orders (Every 2 Hours)
 
 on:
   schedule:
-    # Runs every 2 hours
-    - cron: '0 */2 * * *'
+    # Runs every 2 hours at :17 to avoid GitHub's top-of-hour congestion
+    - cron: '17 */2 * * *'
   workflow_dispatch: # Allows manual run button in GitHub
 
 jobs:
